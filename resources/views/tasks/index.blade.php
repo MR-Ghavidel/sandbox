@@ -8,7 +8,7 @@
         <div class="mb-4 flex flex-wrap items-center justify-between gap-4">
             <div>
                 <h2 class="text-lg font-bold">روزهای هفته</h2>
-                <p class="text-sm text-slate-500">
+                <p class="text-sm text-slate-500 dark:text-slate-400">
                     {{ JalaliDate::format($weekStart, 'd MMMM') }} تا {{ JalaliDate::format($weekEnd, 'd MMMM y') }}
                 </p>
             </div>
@@ -17,27 +17,27 @@
                 @if ($unfinishedPastTasksCount > 0)
                     <form method="POST" action="{{ route('tasks.carry-over') }}">
                         @csrf
-                        <button type="submit" class="rounded-lg bg-amber-100 px-3 py-2 text-sm font-medium text-amber-800 hover:bg-amber-200">
+                        <button type="submit" class="rounded-lg bg-amber-100 dark:bg-amber-900/40 px-3 py-2 text-sm font-medium text-amber-800 dark:text-amber-200 hover:bg-amber-200 dark:hover:bg-amber-900/60">
                             انتقال {{ Number::format($unfinishedPastTasksCount, locale: 'fa') }} کار ناتمام گذشته به امروز
                         </button>
                     </form>
                 @endif
 
-                <div class="flex items-center overflow-hidden rounded-lg border border-slate-200 bg-white text-sm">
-                    <button type="button" data-expand-all="week" class="px-3 py-2 hover:bg-slate-50">باز کردن همه</button>
-                    <button type="button" data-collapse-all="week" class="border-s border-slate-200 px-3 py-2 hover:bg-slate-50">جمع کردن همه</button>
+                <div class="flex items-center overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm">
+                    <button type="button" data-expand-all="week" class="px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800">باز کردن همه</button>
+                    <button type="button" data-collapse-all="week" class="border-s border-slate-200 dark:border-slate-700 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800">جمع کردن همه</button>
                 </div>
 
-                <nav class="flex items-center overflow-hidden rounded-lg border border-slate-200 bg-white text-sm">
-                    <a href="{{ route('tasks.index', ['week' => $weekStart->subWeek()->toDateString()]) }}" class="px-3 py-2 hover:bg-slate-50">&rarr; هفته قبل</a>
-                    <a href="{{ route('tasks.index') }}" class="border-x border-slate-200 px-3 py-2 font-medium hover:bg-slate-50">این هفته</a>
-                    <a href="{{ route('tasks.index', ['week' => $weekStart->addWeek()->toDateString()]) }}" class="px-3 py-2 hover:bg-slate-50">هفته بعد &larr;</a>
+                <nav class="flex items-center overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm">
+                    <a href="{{ route('tasks.index', ['week' => $weekStart->subWeek()->toDateString()]) }}" class="px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800">&rarr; هفته قبل</a>
+                    <a href="{{ route('tasks.index') }}" class="border-x border-slate-200 dark:border-slate-700 px-3 py-2 font-medium hover:bg-slate-50 dark:hover:bg-slate-800">این هفته</a>
+                    <a href="{{ route('tasks.index', ['week' => $weekStart->addWeek()->toDateString()]) }}" class="px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800">هفته بعد &larr;</a>
                 </nav>
             </div>
         </div>
 
         @if ($errors->any())
-            <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div class="mb-4 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/40 px-4 py-3 text-sm text-red-700 dark:text-red-300">
                 <ul class="list-inside list-disc">
                     @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>

@@ -1,5 +1,8 @@
 @import 'tailwindcss';
 
+/* Dark theme: `dark:` utilities apply while <html data-theme="dark"> (set by the layout and theme.js). */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
@@ -67,4 +70,34 @@
     [data-collapse-animate] [data-collapse-body] {
         transition: none;
     }
+}
+
+/*
+ * Thin, soft scrollbar for the app's scroll container (the window itself does not scroll).
+ * The gutter is reserved so the content does not shift when a page becomes long enough to scroll.
+ */
+.app-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-slate-300) transparent;
+    scrollbar-gutter: stable;
+}
+
+.app-scrollbar:hover {
+    scrollbar-color: var(--color-slate-400) transparent;
+}
+
+/*
+ * Dark theme: `dark:` utilities apply while <html data-theme="dark"> (set by the layout / theme.js).
+ * color-scheme makes native controls (inputs, selects, dialogs, scrollbars) dark too.
+ */
+[data-theme='dark'] {
+    color-scheme: dark;
+}
+
+[data-theme='dark'] .app-scrollbar {
+    scrollbar-color: var(--color-slate-700) transparent;
+}
+
+[data-theme='dark'] .app-scrollbar:hover {
+    scrollbar-color: var(--color-slate-600) transparent;
 }

@@ -242,11 +242,11 @@ export const highlightJson = (json) => {
         const [token, string, colon] = match;
         const className = string
             ? colon
-                ? 'text-sky-700'
-                : 'text-emerald-700'
+                ? 'text-sky-700 dark:text-sky-300'
+                : 'text-emerald-700 dark:text-emerald-300'
             : /^[tfn]/.test(token)
-              ? 'text-purple-700'
-              : 'text-amber-700';
+              ? 'text-purple-700 dark:text-purple-300'
+              : 'text-amber-700 dark:text-amber-300';
 
         html += string
             ? `<span class="${className}">${escapeHtml(string)}</span>${colon ? escapeHtml(colon) : ''}`

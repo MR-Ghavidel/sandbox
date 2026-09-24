@@ -1,8 +1,13 @@
 import Sortable from 'sortablejs';
+import { onPageLoad } from './support/page';
 
-const board = document.querySelector('[data-task-board]');
+onPageLoad(() => {
+    const board = document.querySelector('[data-task-board]');
 
-if (board) {
+    if (!board) {
+        return;
+    }
+
     const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
     const editDialog = document.getElementById('edit-task-dialog');
     const editForm = editDialog.querySelector('form');
@@ -186,4 +191,4 @@ if (board) {
             showDialog.close();
         }
     });
-}
+});

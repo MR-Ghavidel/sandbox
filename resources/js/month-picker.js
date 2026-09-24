@@ -1,3 +1,5 @@
+import { onPageLoad } from './support/page';
+
 /**
  * Year/month picker of the payroll page: a calendar button that opens a panel with the 12 Jalali
  * months of a year. The viewed month is filled, the current pay month has a ring, and months with
@@ -5,7 +7,7 @@
  */
 const toPersianDigits = (value) => String(value).replace(/\d/g, (digit) => '۰۱۲۳۴۵۶۷۸۹'[digit]);
 
-document.querySelectorAll('[data-month-picker]').forEach((picker) => {
+const initPicker = (picker, signal) => {
     const toggle = picker.querySelector('[data-month-picker-toggle]');
     const panel = picker.querySelector('[data-month-picker-panel]');
     const monthsGrid = picker.querySelector('[data-picker-months]');
@@ -29,8 +31,8 @@ document.querySelectorAll('[data-month-picker]').forEach((picker) => {
                 link.href = `${picker.dataset.baseUrl}/${shownYear}/${month}`;
                 link.className = [
                     'relative flex flex-col items-center rounded-xl px-1 pt-2 pb-2.5 text-sm transition',
-                    isSelected ? 'bg-sky-600 font-bold text-white shadow-sm' : 'text-slate-700 hover:bg-sky-50 hover:text-sky-800',
-                    isCurrent && !isSelected ? 'ring-2 ring-sky-300 ring-inset' : '',
+                    isSelected ? 'bg-sky-600 font-bold text-white shadow-sm' : 'text-slate-700 dark:text-slate-200 hover:bg-sky-50 dark:hover:bg-sky-950/50 hover:text-sky-800 dark:hover:text-sky-200',
+                    isCurrent && !isSelected ? 'ring-2 ring-sky-300 dark:ring-sky-700 ring-inset' : '',
                 ].join(' ');
 
                 if (isSelected) {
@@ -71,16 +73,32 @@ document.querySelectorAll('[data-month-picker]').forEach((picker) => {
         }),
     );
 
-    document.addEventListener('click', (event) => {
-        if (panel.hasAttribute('data-open') && !picker.contains(event.target)) {
-            setOpen(false);
-        }
-    });
+    document.addEventListener(
+        'click',
+        (event) => {
+            if (panel.hasAttribute('data-open') && !picker.contains(event.target)) {
+                setOpen(false);
+            }
+        },
+        { signal },
+    );
 
-    document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && panel.hasAttribute('data-open')) {
-            setOpen(false);
-            toggle.focus();
-        }
-    });
+    document.addEventListener(
+        'keydown',
+        (event) => {
+            if (event.key === 'Escape' && panel.hasAttribute('data-open')) {
+                setOpen(false);
+                toggle.focus();
+            }
+        },
+        { signal },
+    );
+};
+
+onPageLoad(() => {
+    // Document listeners are removed when leaving the page, so they do not pile up.
+    const documentListeners = new AbortController();
+    document.querySelectorAll('[data-month-picker]').forEach((picker) => initPicker(picker, documentListeners.signal));
+
+    return () => documentListeners.abort();
 });

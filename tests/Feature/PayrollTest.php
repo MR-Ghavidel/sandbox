@@ -185,7 +185,7 @@ class PayrollTest extends TestCase
             ->assertSee('data-privacy-toggle', false)
             ->assertSee('localStorage.getItem(\'hide-amounts\')', false)
             ->assertSee('data-amount-input data-sensitive', false)
-            ->assertSee('text-sky-800" data-sensitive', false);
+            ->assertSee('text-sky-800 dark:text-sky-200" data-sensitive', false);
     }
 
     private function dayUrl(int $year, int $month, string $date): string

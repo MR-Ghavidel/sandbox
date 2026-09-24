@@ -1,8 +1,13 @@
 import { gregorianToJalali, jalaliMonthLength, jalaliToGregorian } from '../support/jalali';
+import { onPageLoad } from '../support/page';
 
-const tool = document.querySelector('[data-timestamp-tool]');
+onPageLoad(() => {
+    const tool = document.querySelector('[data-timestamp-tool]');
 
-if (tool) {
+    if (!tool) {
+        return;
+    }
+
     const timezoneSelect = tool.querySelector('[data-timezone]');
     const timestampInput = tool.querySelector('[data-timestamp-input]');
     const datePart = (name) => tool.querySelector(`[data-date-part="${name}"]`);
@@ -230,7 +235,9 @@ if (tool) {
     });
 
     tick();
-    setInterval(tick, 1000);
+    const clock = setInterval(tick, 1000);
     fillDateWith(new Date());
     convertDate();
-}
+
+    return () => clearInterval(clock);
+});

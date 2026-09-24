@@ -1,3 +1,5 @@
+import { onBeforeLeave, onPageLoad } from './support/page';
+
 /**
  * Payroll page:
  * - Auto-saves a day of the attendance table whenever one of its fields changes,
@@ -183,6 +185,8 @@ document.addEventListener('change', (event) => {
     saveRow(row);
 });
 
+onBeforeLeave(() => (hasPendingSaves() ? 'تغییرات هنوز در حال ذخیره است. صفحه را ترک می‌کنید؟' : null));
+
 window.addEventListener('beforeunload', (event) => {
     if (hasPendingSaves()) {
         event.preventDefault();
@@ -211,8 +215,10 @@ document.addEventListener('change', (event) => {
 
 const formatAmount = (digits) => digits.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
-document.querySelectorAll('[data-amount-input]').forEach((input) => {
-    input.value = formatAmount(toLatinDigits(input.value).replace(/\D/g, ''));
+onPageLoad(() => {
+    document.querySelectorAll('[data-amount-input]').forEach((input) => {
+        input.value = formatAmount(toLatinDigits(input.value).replace(/\D/g, ''));
+    });
 });
 
 document.addEventListener('input', (event) => {

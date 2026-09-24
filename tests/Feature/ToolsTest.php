@@ -17,6 +17,43 @@ class ToolsTest extends TestCase
         $response->assertSee('href="'.route('tools.index').'"', false)->assertSee('aria-current="page"', false);
     }
 
+    public function test_drawer_lists_tools_as_a_collapsible_submenu_opened_on_tool_pages(): void
+    {
+        // On the tools overview the submenu is highlighted but not forced open, since no sub-item is active.
+        $this->get(route('tools.index'))
+            ->assertOk()
+            ->assertSee('data-collapsible="nav-tools.index"', false)
+            ->assertSee('نمایش زیرمجموعه‌های ابزارها')
+            ->assertSee('href="'.route('tools.json').'"', false)
+            ->assertSee('href="'.route('tools.timestamp').'"', false)
+            ->assertDontSee('data-collapse-force-open', false);
+
+        $this->get(route('tools.json'))
+            ->assertOk()
+            ->assertSee('data-collapse-force-open', false)
+            ->assertSeeInOrder(['href="'.route('tools.json').'" class="block rounded-md px-3 py-1.5 text-sm bg-sky-50 dark:bg-sky-950/40 font-medium text-sky-700 dark:text-sky-300"', 'aria-current="page"', 'مرتب‌سازی JSON'], false);
+    }
+
+    public function test_layout_has_the_theme_toggle_and_applies_the_theme_before_paint(): void
+    {
+        $this->get(route('tools.index'))
+            ->assertOk()
+            ->assertSee('data-theme-toggle', false)
+            ->assertSee("localStorage.getItem('theme')", false)
+            ->assertSee('prefers-color-scheme: dark', false);
+    }
+
+    public function test_layout_marks_the_regions_replaced_by_soft_navigation(): void
+    {
+        $this->get(route('tools.index'))
+            ->assertOk()
+            ->assertSee('data-page dir="rtl"', false)
+            ->assertSee('data-scroll-container dir="ltr"', false)
+            ->assertSee('data-page-title', false)
+            ->assertSee('data-drawer-nav', false)
+            ->assertSee('data-navigation-progress', false);
+    }
+
     public function test_json_formatter_page_renders_its_input_output_and_copy_button(): void
     {
         $this->get(route('tools.json'))

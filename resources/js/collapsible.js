@@ -1,3 +1,5 @@
+import { onPageLoad } from './support/page';
+
 /**
  * Collapsible sections: a [data-collapsible="unique-key"] container with a
  * [data-collapse-toggle] button and a [data-collapse-body] inside (animated in app.css).
@@ -29,7 +31,7 @@ const setCollapsed = (section, isCollapsed) => {
     }
 };
 
-document.querySelectorAll('[data-collapsible]').forEach((section) => {
+const restoreSections = () => document.querySelectorAll('[data-collapsible]').forEach((section) => {
     let storedState = null;
 
     try {
@@ -47,8 +49,12 @@ document.querySelectorAll('[data-collapsible]').forEach((section) => {
     applyCollapsed(section, isCollapsed);
 });
 
-// Enable the open/close animation only after the restored state has been painted.
-requestAnimationFrame(() => requestAnimationFrame(() => document.documentElement.setAttribute('data-collapse-animate', '')));
+onPageLoad(() => {
+    // Restore saved states without animating, then enable the open/close animation once painted.
+    document.documentElement.removeAttribute('data-collapse-animate');
+    restoreSections();
+    requestAnimationFrame(() => requestAnimationFrame(() => document.documentElement.setAttribute('data-collapse-animate', '')));
+});
 
 document.addEventListener('click', (event) => {
     const toggle = event.target.closest('[data-collapse-toggle]');

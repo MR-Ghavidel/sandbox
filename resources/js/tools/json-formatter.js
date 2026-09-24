@@ -1,8 +1,13 @@
+import { onPageLoad } from '../support/page';
 import { highlightJson, repairAndParse } from './json-repair';
 
-const tool = document.querySelector('[data-json-formatter]');
+onPageLoad(() => {
+    const tool = document.querySelector('[data-json-formatter]');
 
-if (tool) {
+    if (!tool) {
+        return;
+    }
+
     const input = tool.querySelector('[data-json-input]');
     const output = tool.querySelector('[data-json-output]');
     const status = tool.querySelector('[data-json-status]');
@@ -42,7 +47,7 @@ if (tool) {
         if (result.error) {
             // Still show the text with \uXXXX escapes decoded, so it can be read.
             output.textContent = result.fallbackText;
-            setStatus(`نامعتبر — ${result.error}`, 'bg-red-100 text-red-700');
+            setStatus(`نامعتبر — ${result.error}`, 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300');
 
             return;
         }
@@ -52,7 +57,7 @@ if (tool) {
         const json = isMinified ? JSON.stringify(result.value) : JSON.stringify(result.value, null, indent);
 
         output.innerHTML = highlightJson(json);
-        setStatus('معتبر ✓', 'bg-emerald-100 text-emerald-700');
+        setStatus('معتبر ✓', 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300');
     };
 
     const scheduleRender = () => {
@@ -79,4 +84,4 @@ if (tool) {
 
         render();
     });
-}
+});

@@ -18,7 +18,7 @@
 
 @php($hasErrors = $errors->hasAny(array_column($fields, 'name')))
 
-<section data-collapsible="payroll-settings-panel" data-collapsed-by-default @if ($hasErrors) data-collapse-force-open @else data-collapsed @endif class="group/collapsible rounded-xl border border-slate-200 bg-white shadow-sm">
+<section data-collapsible="payroll-settings-panel" data-collapsed-by-default @if ($hasErrors) data-collapse-force-open @else data-collapsed @endif class="group/collapsible rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm">
     <div class="flex items-center justify-between px-4 py-3">
         <h2 class="font-bold">تنظیمات {{ $period->label() }}</h2>
         <x-collapse-toggle />
@@ -26,24 +26,24 @@
 
     <div data-collapse-body>
     <div class="min-h-0 overflow-hidden">
-    <form method="POST" action="{{ route('payroll.settings.update', ['year' => $period->year, 'month' => $period->month]) }}" class="space-y-3 border-t border-slate-100 p-4">
+    <form method="POST" action="{{ route('payroll.settings.update', ['year' => $period->year, 'month' => $period->month]) }}" class="space-y-3 border-t border-slate-100 dark:border-slate-800 p-4">
         @csrf
         @method('PUT')
 
         @if ($settings->id === null)
-            <p class="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">تنظیمات این ماه هنوز ذخیره نشده؛ مقادیر از ماه قبل (یا پیش‌فرض) آمده‌اند.</p>
+            <p class="rounded-md bg-amber-50 dark:bg-amber-950/40 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">تنظیمات این ماه هنوز ذخیره نشده؛ مقادیر از ماه قبل (یا پیش‌فرض) آمده‌اند.</p>
         @endif
 
         @foreach ($fields as $field)
             <label class="block text-sm">
                 <span class="mb-1 block font-medium">{{ $field['label'] }}</span>
                 <input type="text" inputmode="{{ isset($field['isAmount']) ? 'numeric' : 'decimal' }}" dir="ltr" @if (isset($field['isAmount'])) data-amount-input data-sensitive @endif name="{{ $field['name'] }}" value="{{ old($field['name'], $field['value']) }}" placeholder="{{ $field['placeholder'] ?? '' }}" @class([
-                    'w-full rounded-md border px-2 py-1.5 text-left focus:border-sky-400 focus:outline-none',
-                    'border-red-400' => $errors->has($field['name']),
-                    'border-slate-200' => ! $errors->has($field['name']),
+                    'w-full rounded-md border px-2 py-1.5 text-left focus:border-sky-400 dark:focus:border-sky-600 focus:outline-none',
+                    'border-red-400 dark:border-red-500' => $errors->has($field['name']),
+                    'border-slate-200 dark:border-slate-700' => ! $errors->has($field['name']),
                 ])>
                 @isset($field['hint'])
-                    <span class="mt-1 block text-xs text-slate-400">{{ $field['hint'] }}</span>
+                    <span class="mt-1 block text-xs text-slate-400 dark:text-slate-500">{{ $field['hint'] }}</span>
                 @endisset
             </label>
         @endforeach
