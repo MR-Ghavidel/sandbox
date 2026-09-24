@@ -49,7 +49,24 @@ class PayrollController extends Controller
             'settings' => $settings,
             'days' => $days,
             'summary' => $calculator->calculate($settings, $days, today()),
+            'monthsWithData' => $this->monthsWithData(),
         ]);
+    }
+
+    /**
+     * Keys ("1405-5") of every month that has recorded days or saved settings, for the month picker.
+     *
+     * @return list<string>
+     */
+    private function monthsWithData(): array
+    {
+        $fromDays = $this->attendanceDays->getSavedDates()
+            ->map(fn (CarbonImmutable $date): PayrollPeriod => PayrollPeriod::containing($date))
+            ->map(fn (PayrollPeriod $period): string => $period->year.'-'.$period->month);
+        $fromSettings = collect($this->payrollMonths->getSavedMonths())
+            ->map(fn (array $month): string => $month['year'].'-'.$month['month']);
+
+        return $fromDays->merge($fromSettings)->unique()->values()->all();
     }
 
     /**

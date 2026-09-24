@@ -19,6 +19,8 @@
             </label>
         </form>
 
+        <x-payroll.month-picker :period="$period" :months-with-data="$monthsWithData" />
+
         <nav class="flex items-center overflow-hidden rounded-lg border border-slate-200 bg-white text-sm">
             <a href="{{ route('payroll.show', ['year' => $period->previous()->year, 'month' => $period->previous()->month]) }}" class="px-3 py-2 hover:bg-slate-50">&rarr; {{ $period->previous()->label() }}</a>
             <a href="{{ route('payroll.index') }}" class="border-x border-slate-200 px-3 py-2 font-medium hover:bg-slate-50">ماه جاری</a>

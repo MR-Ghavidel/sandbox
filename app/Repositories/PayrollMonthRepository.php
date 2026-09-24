@@ -44,6 +44,21 @@ class PayrollMonthRepository
     }
 
     /**
+     * Get the year and month of every month with saved settings.
+     *
+     * @return list<array{year: int, month: int}>
+     */
+    public function getSavedMonths(): array
+    {
+        return $this->query()
+            ->orderBy('year')
+            ->orderBy('month')
+            ->get(['year', 'month'])
+            ->map(fn (object $row): array => ['year' => (int) $row->year, 'month' => (int) $row->month])
+            ->all();
+    }
+
+    /**
      * Insert or update the settings of a month.
      */
     public function save(PayrollMonthEntity $settings): void

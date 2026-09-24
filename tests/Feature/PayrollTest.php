@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Entities\PayrollMonthEntity;
 use App\Repositories\AttendanceDayRepository;
 use App\Repositories\PayrollMonthRepository;
 use App\Support\PayrollCalculator;
@@ -160,6 +161,21 @@ class PayrollTest extends TestCase
             ->assertSee('value="13,490,000"', false)
             ->assertSee('value="12,000,000"', false)
             ->assertSee('data-amount-input', false);
+    }
+
+    public function test_month_picker_knows_the_viewed_and_current_months_and_months_with_data(): void
+    {
+        app(PayrollMonthRepository::class)->save(PayrollMonthEntity::defaultsFor(1404, 11));
+        $this->putJson($this->dayUrl(1405, 5, '2026-07-18'), ['is_work_day' => true, 'arrive' => [1 => '08:00'], 'leave' => [1 => '16:00']])->assertOk();
+
+        $this->get(route('payroll.show', ['year' => 1405, 'month' => 5]))
+            ->assertOk()
+            ->assertSee('data-month-picker', false)
+            ->assertSee('data-base-url="'.url('payroll').'"', false)
+            ->assertSee('data-selected="1405-5"', false)
+            ->assertSee('data-current="1405-7"', false)
+            ->assertSee('data-months-with-data=\'["1405-5","1404-11"]\'', false)
+            ->assertSee(json_encode('مرداد'), false);
     }
 
     public function test_salary_amounts_are_marked_for_privacy_mode(): void

@@ -45,6 +45,19 @@ class AttendanceDayRepository
     }
 
     /**
+     * Get the distinct dates that have a saved row, oldest first.
+     *
+     * @return Collection<int, CarbonImmutable>
+     */
+    public function getSavedDates(): Collection
+    {
+        return $this->query()
+            ->orderBy('date')
+            ->pluck('date')
+            ->map(fn (string $date): CarbonImmutable => CarbonImmutable::parse($date)->startOfDay());
+    }
+
+    /**
      * Get every day of a period, using a blank day where nothing is saved yet.
      *
      * @return Collection<int, AttendanceDayEntity>
