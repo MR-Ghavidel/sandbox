@@ -10,6 +10,14 @@
         <p class="mt-1 text-slate-600">امروز {{ JalaliDate::format(today(), 'EEEE d MMMM y') }}</p>
     </div>
 
+    @if ($workHistory)
+        <x-dashboard.work-history :history="$workHistory" />
+    @else
+        <p class="mb-6 rounded-xl border border-dashed border-slate-300 bg-white px-5 py-4 text-sm text-slate-500">
+            وقتی ورود و خروج‌هایت را در <a href="{{ route('payroll.index') }}" class="text-sky-700 hover:underline">کارکرد و حقوق</a> ثبت کنی، اینجا کارنامه کاری‌ات (مدت همکاری، مجموع ساعت‌ها و دریافتی‌ها) نمایش داده می‌شود.
+        </p>
+    @endif
+
     <div class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <p class="text-sm text-slate-500">کارهای امروز</p>

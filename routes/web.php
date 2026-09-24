@@ -26,6 +26,13 @@ Route::controller(PayrollController::class)
         Route::put('/{year}/{month}/days/{date}', 'updateDay')->name('days.update');
     });
 
+// The tools run entirely in the browser (resources/js/tools), so they are plain views.
+Route::prefix('tools')->name('tools.')->group(function (): void {
+    Route::view('/', 'tools.index')->name('index');
+    Route::view('/json', 'tools.json')->name('json');
+    Route::view('/timestamp', 'tools.timestamp')->name('timestamp');
+});
+
 // "store" is called by the Bizagi Chrome extension, so it is excluded from CSRF protection in bootstrap/app.php.
 Route::controller(AttendanceImportController::class)
     ->prefix('attendance-imports')

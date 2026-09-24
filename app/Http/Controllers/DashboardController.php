@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Entities\TaskEntity;
 use App\Repositories\TaskRepository;
+use App\Support\WorkHistory;
 use App\TaskStatus;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
@@ -12,9 +13,9 @@ use Illuminate\View\View;
 class DashboardController extends Controller
 {
     /**
-     * Show the home page with an overview of today and this week.
+     * Show the home page with an overview of today, this week and the whole work history.
      */
-    public function __invoke(TaskRepository $tasks): View
+    public function __invoke(TaskRepository $tasks, WorkHistory $workHistory): View
     {
         $weekStart = CarbonImmutable::today()->startOfWeek(CarbonInterface::SATURDAY);
         $weekTasks = $tasks->getBetween($weekStart, $weekStart->addDays(6));
@@ -28,6 +29,7 @@ class DashboardController extends Controller
             'weekTotalCount' => $weekTasks->count(),
             'weekCompletedCount' => $weekTasks->where('status', TaskStatus::Completed)->count(),
             'unfinishedPastTasksCount' => $tasks->countUnfinishedBefore(today()),
+            'workHistory' => $workHistory->summarize(today()),
         ]);
     }
 }

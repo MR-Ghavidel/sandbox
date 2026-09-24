@@ -31,6 +31,20 @@ class AttendanceDayRepository
     }
 
     /**
+     * Get every saved day, oldest first, keyed by "Y-m-d".
+     *
+     * @return Collection<string, AttendanceDayEntity>
+     */
+    public function getAll(): Collection
+    {
+        return $this->query()
+            ->orderBy('date')
+            ->get()
+            ->map(AttendanceDayEntity::fromRow(...))
+            ->keyBy(fn (AttendanceDayEntity $day): string => $day->date->toDateString());
+    }
+
+    /**
      * Get every day of a period, using a blank day where nothing is saved yet.
      *
      * @return Collection<int, AttendanceDayEntity>
