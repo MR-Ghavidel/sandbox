@@ -18,7 +18,7 @@ class TaskManagementTest extends TestCase
     {
         parent::setUp();
 
-        // Wednesday 1405/07/02 — its week runs from Saturday 2026-09-19 to Friday 2026-09-25.
+        // Wednesday 1405/07/01 — its week runs from Saturday 2026-09-19 to Friday 2026-09-25.
         Carbon::setTestNow('2026-09-23 10:00:00');
     }
 
