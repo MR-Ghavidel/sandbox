@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+    <head>
+        <meta charset="utf-8">
+        <title>Bizagi → کارکرد</title>
+        <link rel="stylesheet" href="popup.css">
+    </head>
+    <body>
+        <h1>ارسال ورود و خروج</h1>
+
+        <p id="status" class="status">در حال خواندن جدول بیزاجی...</p>
+
+        <table id="preview" hidden>
+            <thead>
+                <tr><th>تاریخ</th><th>ورود/خروج</th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <button id="send" type="button" disabled>ارسال به سامانه کارکرد</button>
+
+        <details>
+            <summary>تنظیمات</summary>
+            <label>
+                آدرس سامانه کارکرد
+                <input id="app-url" type="url" dir="ltr" placeholder="https://sandbox.local">
+            </label>
+            <button id="save-url" type="button" class="secondary">ذخیره آدرس</button>
+        </details>
+
+        <script type="module" src="popup.js"></script>
+    </body>
+</html>

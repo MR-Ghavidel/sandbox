@@ -9,7 +9,7 @@ return [
     |
     | Items shown in the right-hand drawer menu of the main layout. To add a new
     | section to the app, create its route and add an item here. "active" is a
-    | route name pattern used to highlight the item, and "icon" is the "d"
+    | route name pattern (or a list of them) used to highlight the item, and "icon" is the "d"
     | attribute of a 24x24 outline SVG path (e.g. from heroicons.com).
     |
     */
@@ -26,6 +26,12 @@ return [
             'route' => 'tasks.index',
             'active' => 'tasks.*',
             'icon' => 'M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
+        ],
+        [
+            'label' => 'کارکرد و حقوق',
+            'route' => 'payroll.index',
+            'active' => ['payroll.*', 'attendance-imports.*'],
+            'icon' => 'M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
         ],
     ],
 

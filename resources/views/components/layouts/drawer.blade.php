@@ -11,7 +11,7 @@
 
     <nav class="flex-1 space-y-1 overflow-y-auto p-3">
         @foreach (config('navigation.items') as $item)
-            @php($isActive = request()->routeIs($item['active']))
+            @php($isActive = request()->routeIs(...(array) $item['active']))
             <a href="{{ route($item['route']) }}" @class([
                 'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium',
                 'bg-sky-50 text-sky-700' => $isActive,
