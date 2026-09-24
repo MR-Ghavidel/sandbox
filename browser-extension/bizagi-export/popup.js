@@ -69,11 +69,21 @@ const readBizagiTable = async () => {
 };
 
 sendButton.addEventListener('click', async () => {
+    const appUrl = (appUrlInput.value.trim() || DEFAULT_APP_URL).replace(/\/+$/, '');
+
+    // Firefox may not grant host permissions at install time. The request has to start directly in the
+    // click handler (before any await) to count as a user action; Chrome simply answers "granted".
+    const permissionRequest = chrome.permissions.request({ origins: [`${new URL(appUrl).origin}/*`] });
+
     sendButton.disabled = true;
     showStatus('در حال ارسال...');
 
     try {
-        const response = await fetch(`${await getAppUrl()}/attendance-imports`, {
+        if (!(await permissionRequest)) {
+            throw new Error('اجازه دسترسی به آدرس سامانه داده نشد');
+        }
+
+        const response = await fetch(`${appUrl}/attendance-imports`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
             body: JSON.stringify({ source: 'bizagi', days: extractedDays }),

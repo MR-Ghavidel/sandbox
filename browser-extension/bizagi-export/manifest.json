@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Bizagi → کارکرد",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Reads the attendance (ورود و خروج) table from Bizagi and sends it to the work-hours page.",
     "action": {
         "default_title": "ارسال ورود و خروج به سامانه کارکرد",
@@ -9,5 +9,14 @@
     },
     "permissions": ["activeTab", "scripting", "storage"],
     "host_permissions": ["https://panel.suncitygroup.ir/*", "https://sandbox.local/*", "http://sandbox.local/*"],
-    "optional_host_permissions": ["https://*/*", "http://*/*"]
+    "optional_host_permissions": ["https://*/*", "http://*/*"],
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "bizagi-export@sandbox.local",
+            "strict_min_version": "128.0",
+            "data_collection_permissions": {
+                "required": ["none"]
+            }
+        }
+    }
 }
