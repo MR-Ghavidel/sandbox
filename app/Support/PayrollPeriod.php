@@ -8,14 +8,21 @@ use Illuminate\Support\Collection;
 
 /**
  * A salary period for a Jalali month: from the day after the previous month's
- * closing day up to and including this month's closing day (27th → 26th).
+ * closing day up to and including this month's closing day. Months 1–6 close on
+ * the 26th and months 7–12 on the 25th, so e.g. Mordad runs 27 Tir → 26 Mordad and
+ * Aban runs 26 Mehr → 25 Aban. Where the rule switches, Mehr runs 27 Shahrivar →
+ * 25 Mehr and Farvardin runs 26 Esfand → 26 Farvardin, so every day belongs to
+ * exactly one period.
  */
 final readonly class PayrollPeriod
 {
     /**
-     * The Jalali day of month on which every period closes.
+     * The Jalali day on which the given month's period closes.
      */
-    public const CLOSING_DAY = 26;
+    public static function closingDay(int $month): int
+    {
+        return $month <= 6 ? 26 : 25;
+    }
 
     private function __construct(
         public int $year,
@@ -34,8 +41,8 @@ final readonly class PayrollPeriod
         return new self(
             year: $year,
             month: $month,
-            startDate: JalaliDate::toGregorian($previousYear, $previousMonth, self::CLOSING_DAY)->addDay(),
-            endDate: JalaliDate::toGregorian($year, $month, self::CLOSING_DAY),
+            startDate: JalaliDate::toGregorian($previousYear, $previousMonth, self::closingDay($previousMonth))->addDay(),
+            endDate: JalaliDate::toGregorian($year, $month, self::closingDay($month)),
         );
     }
 
@@ -46,7 +53,7 @@ final readonly class PayrollPeriod
     {
         ['year' => $year, 'month' => $month, 'day' => $day] = JalaliDate::parts($date);
 
-        if ($day <= self::CLOSING_DAY) {
+        if ($day <= self::closingDay($month)) {
             return self::for($year, $month);
         }
 

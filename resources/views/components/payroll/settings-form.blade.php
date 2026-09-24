@@ -5,14 +5,14 @@
 
 @php
     $fields = [
-        ['name' => 'salary', 'label' => 'حقوق ماه', 'value' => $settings->salary],
+        ['name' => 'salary', 'label' => 'حقوق ماه', 'value' => number_format($settings->salary), 'isAmount' => true],
         ['name' => 'daily_work_time', 'label' => 'ساعت کار روزانه', 'value' => TimeInput::latinDigits(Duration::format($settings->dailyWorkMinutes)), 'placeholder' => '8:00'],
         ['name' => 'salary_divisor_days', 'label' => 'روزهای تقسیم حقوق', 'value' => $settings->salaryDivisorDays, 'hint' => 'نرخ ساعتی = حقوق ÷ این عدد ÷ ساعت کار روزانه'],
         ['name' => 'overtime_multiplier', 'label' => 'ضریب اضافه‌کار', 'value' => $settings->overtimeMultiplier],
-        ['name' => 'advance', 'label' => 'مساعده', 'value' => $settings->advance],
+        ['name' => 'advance', 'label' => 'مساعده', 'value' => number_format($settings->advance), 'isAmount' => true],
         ['name' => 'insurance_rate_percent', 'label' => 'درصد بیمه', 'value' => $settings->insuranceRatePercent],
         ['name' => 'tax_rate_percent', 'label' => 'درصد مالیات', 'value' => $settings->taxRatePercent],
-        ['name' => 'tax_exemption', 'label' => 'معافیت مالیاتی', 'value' => $settings->taxExemption],
+        ['name' => 'tax_exemption', 'label' => 'معافیت مالیاتی', 'value' => number_format($settings->taxExemption), 'isAmount' => true],
     ];
 @endphp
 
@@ -33,7 +33,7 @@
         @foreach ($fields as $field)
             <label class="block text-sm">
                 <span class="mb-1 block font-medium">{{ $field['label'] }}</span>
-                <input type="text" inputmode="decimal" dir="ltr" name="{{ $field['name'] }}" value="{{ old($field['name'], $field['value']) }}" placeholder="{{ $field['placeholder'] ?? '' }}" @class([
+                <input type="text" inputmode="{{ isset($field['isAmount']) ? 'numeric' : 'decimal' }}" dir="ltr" @if (isset($field['isAmount'])) data-amount-input @endif name="{{ $field['name'] }}" value="{{ old($field['name'], $field['value']) }}" placeholder="{{ $field['placeholder'] ?? '' }}" @class([
                     'w-full rounded-md border px-2 py-1.5 text-left focus:border-sky-400 focus:outline-none',
                     'border-red-400' => $errors->has($field['name']),
                     'border-slate-200' => ! $errors->has($field['name']),

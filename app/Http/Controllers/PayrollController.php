@@ -4,15 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Entities\AttendanceDayEntity;
 use App\Entities\PayrollMonthEntity;
-use App\Http\Requests\UpdateAttendanceDaysRequest;
+use App\Http\Requests\UpdateAttendanceDayRequest;
 use App\Http\Requests\UpdatePayrollSettingsRequest;
 use App\Repositories\AttendanceDayRepository;
 use App\Repositories\PayrollMonthRepository;
+use App\Support\Duration;
 use App\Support\PayrollCalculator;
 use App\Support\PayrollPeriod;
 use App\Support\TimeInput;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\View\View;
 
 class PayrollController extends Controller
@@ -72,28 +75,28 @@ class PayrollController extends Controller
     }
 
     /**
-     * Save the arrive/leave times of the period's days.
+     * Auto-save one day of the attendance table and return its totals and the updated summary.
      */
-    public function updateDays(UpdateAttendanceDaysRequest $request, int $year, int $month): RedirectResponse
+    public function updateDay(UpdateAttendanceDayRequest $request, PayrollCalculator $calculator, int $year, int $month, string $date): JsonResponse
     {
         $period = PayrollPeriod::for($year, $month);
+        abort_unless($this->isDateInPeriod($date, $period), 404);
 
-        $days = collect($request->validated('days'))
-            ->filter(fn (array $day, string $date): bool => $this->isDateInPeriod($date, $period))
-            ->map(fn (array $day, string $date): AttendanceDayEntity => new AttendanceDayEntity(
-                id: null,
-                date: CarbonImmutable::parse($date),
-                isWorkDay: (bool) $day['is_work_day'],
-                note: filled($day['note'] ?? null) ? trim($day['note']) : null,
-                pairs: array_map(fn (int $pair): array => [
-                    'arrive' => $day['arrive'][$pair] ?? null,
-                    'leave' => $day['leave'][$pair] ?? null,
-                ], range(1, AttendanceDayEntity::PAIRS_PER_DAY)),
-            ));
+        $day = $request->toEntity(CarbonImmutable::parse($date));
+        $this->attendanceDays->saveMany([$day]);
 
-        $this->attendanceDays->saveMany($days->values());
+        $settings = $this->payrollMonths->findOrDefaults($year, $month);
+        $summary = $calculator->calculate($settings, $this->attendanceDays->getForPeriod($period), today());
 
-        return to_route('payroll.show', ['year' => $year, 'month' => $month])->with('status', 'ساعت‌های ورود و خروج ذخیره شد.');
+        return response()->json([
+            'pairs' => $day->pairs,
+            'total_label' => $day->workedMinutes() > 0 ? Duration::format($day->workedMinutes()) : '',
+            'is_work_day' => $day->isWorkDay,
+            'is_incomplete' => $day->hasIncompletePair(),
+            'is_off_day_work' => ! $day->isWorkDay && $day->workedMinutes() > 0,
+            'summary_html' => Blade::render('<x-payroll.summary :summary="$summary" :settings="$settings" />', compact('summary', 'settings')),
+            'breakdown_html' => Blade::render('<x-payroll.breakdown :summary="$summary" :settings="$settings" />', compact('summary', 'settings')),
+        ]);
     }
 
     private function isDateInPeriod(string $date, PayrollPeriod $period): bool

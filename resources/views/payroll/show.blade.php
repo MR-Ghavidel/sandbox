@@ -30,13 +30,18 @@
         </div>
     @endif
 
-    <x-payroll.summary :summary="$summary" :settings="$settings" />
+    {{-- Replaced with fresh HTML after every auto-save of a day. --}}
+    <div data-payroll-summary>
+        <x-payroll.summary :summary="$summary" :settings="$settings" />
+    </div>
 
     <div class="grid grid-cols-1 items-start gap-4 xl:grid-cols-[1fr_22rem]">
         <x-payroll.days-table :days="$days" :period="$period" class="xl:order-1" />
 
         <div class="space-y-4 xl:order-2">
-            <x-payroll.breakdown :summary="$summary" :settings="$settings" />
+            <div data-payroll-breakdown>
+                <x-payroll.breakdown :summary="$summary" :settings="$settings" />
+            </div>
             <x-payroll.settings-form :settings="$settings" :period="$period" />
         </div>
     </div>

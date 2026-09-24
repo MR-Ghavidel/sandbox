@@ -18,12 +18,12 @@ Route::resource('tasks', TaskController::class)->only(['index', 'store', 'update
 Route::controller(PayrollController::class)
     ->prefix('payroll')
     ->name('payroll.')
-    ->where(['year' => '1[3-4][0-9]{2}', 'month' => '[1-9]|1[0-2]'])
+    ->where(['year' => '1[3-4][0-9]{2}', 'month' => '[1-9]|1[0-2]', 'date' => '[0-9]{4}-[0-9]{2}-[0-9]{2}'])
     ->group(function (): void {
         Route::get('/', 'index')->name('index');
         Route::get('/{year}/{month}', 'show')->name('show');
         Route::put('/{year}/{month}/settings', 'updateSettings')->name('settings.update');
-        Route::put('/{year}/{month}/days', 'updateDays')->name('days.update');
+        Route::put('/{year}/{month}/days/{date}', 'updateDay')->name('days.update');
     });
 
 // "store" is called by the Bizagi Chrome extension, so it is excluded from CSRF protection in bootstrap/app.php.

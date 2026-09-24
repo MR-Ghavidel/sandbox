@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Support\JalaliDate;
 use App\Support\PayrollPeriod;
 use App\Support\TimeInput;
 use Carbon\CarbonImmutable;
@@ -23,6 +24,31 @@ class PayrollPeriodTest extends TestCase
     {
         $this->assertSame([1405, 6], $this->yearAndMonth(PayrollPeriod::containing(CarbonImmutable::parse('2026-09-17')))); // 26 Shahrivar
         $this->assertSame([1405, 7], $this->yearAndMonth(PayrollPeriod::containing(CarbonImmutable::parse('2026-09-18')))); // 27 Shahrivar
+    }
+
+    public function test_second_half_of_the_year_closes_on_the_25th(): void
+    {
+        $mehr = PayrollPeriod::for(1405, 7);
+        $aban = PayrollPeriod::for(1405, 8);
+
+        // Mehr starts the day after Shahrivar's closing day (26th), so it is one day shorter.
+        $this->assertSame('2026-09-18', $mehr->startDate->toDateString()); // 27 Shahrivar
+        $this->assertSame('2026-10-17', $mehr->endDate->toDateString());   // 25 Mehr
+        $this->assertSame('2026-10-18', $aban->startDate->toDateString()); // 26 Mehr
+        $this->assertSame('2026-11-16', $aban->endDate->toDateString());   // 25 Aban
+
+        $this->assertSame([1405, 7], $this->yearAndMonth(PayrollPeriod::containing(CarbonImmutable::parse('2026-10-17'))));
+        $this->assertSame([1405, 8], $this->yearAndMonth(PayrollPeriod::containing(CarbonImmutable::parse('2026-10-18'))));
+    }
+
+    public function test_farvardin_starts_the_day_after_esfand_closes_on_the_25th(): void
+    {
+        $esfand = PayrollPeriod::for(1405, 12);
+        $farvardin = PayrollPeriod::for(1406, 1);
+
+        $this->assertTrue($farvardin->startDate->equalTo($esfand->endDate->addDay()));
+        $this->assertSame('۲۶ اسفند', JalaliDate::format($farvardin->startDate, 'd MMMM'));
+        $this->assertSame('۲۶ فروردین', JalaliDate::format($farvardin->endDate, 'd MMMM'));
     }
 
     public function test_period_wraps_around_the_year(): void

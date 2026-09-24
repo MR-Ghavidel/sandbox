@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Repositories\AttendanceDayRepository;
 use App\Repositories\PayrollMonthRepository;
+use App\Support\PayrollCalculator;
 use App\Support\PayrollPeriod;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -34,9 +35,9 @@ class PayrollTest extends TestCase
             ->assertSee('کارکرد مرداد ۱۴۰۵')
             ->assertSee('۲۷ تیر')
             ->assertSee('۲۶ مرداد')
-            ->assertSee('name="days[2026-07-18][arrive][1]"', false)
-            ->assertSee('name="days[2026-08-17][arrive][1]"', false)
-            ->assertDontSee('name="days[2026-08-18][arrive][1]"', false)
+            ->assertSee('data-save-url="'.$this->dayUrl(1405, 5, '2026-07-18').'"', false)
+            ->assertSee('data-save-url="'.$this->dayUrl(1405, 5, '2026-08-17').'"', false)
+            ->assertDontSee('data-save-url="'.$this->dayUrl(1405, 5, '2026-08-18').'"', false)
             ->assertSee('href="'.route('payroll.index').'"', false);
     }
 
@@ -80,31 +81,89 @@ class PayrollTest extends TestCase
         $this->assertDatabaseCount('payroll_months', 0);
     }
 
-    public function test_days_are_saved_with_normalized_times_and_shown_in_the_summary(): void
+    public function test_a_day_is_auto_saved_with_normalized_times_and_returns_the_updated_summary(): void
     {
-        $this->put(route('payroll.days.update', ['year' => 1405, 'month' => 5]), [
-            'days' => [
-                '2026-07-18' => ['is_work_day' => '1', 'note' => '', 'arrive' => [1 => '8:39'], 'leave' => [1 => '۱۶:۴۱']],
-                '2026-07-24' => ['is_work_day' => '0', 'note' => 'جمعه', 'arrive' => [], 'leave' => []],
-                '2026-09-01' => ['is_work_day' => '1', 'note' => '', 'arrive' => [1 => '08:00'], 'leave' => [1 => '16:00']], // outside the period
-            ],
-        ])->assertRedirect(route('payroll.show', ['year' => 1405, 'month' => 5]));
+        $response = $this->putJson($this->dayUrl(1405, 5, '2026-07-18'), [
+            'is_work_day' => true,
+            'note' => '',
+            'arrive' => [1 => '8:39', 2 => '830'],
+            'leave' => [1 => '۱۶:۴۱'],
+        ])->assertOk();
 
-        $days = app(AttendanceDayRepository::class)->getForPeriod(PayrollPeriod::for(1405, 5));
-        $this->assertSame(['arrive' => '08:39', 'leave' => '16:41'], $days->first()->pairs[0]);
-        $this->assertSame(8 * 60 + 2, $days->first()->workedMinutes());
-        $this->assertFalse($days->firstWhere(fn ($day) => $day->date->toDateString() === '2026-07-24')->isWorkDay);
-        $this->assertDatabaseMissing('attendance_days', ['date' => '2026-09-01']);
+        $response->assertJson([
+            'pairs' => [['arrive' => '08:39', 'leave' => '16:41'], ['arrive' => '08:30', 'leave' => null], ['arrive' => null, 'leave' => null], ['arrive' => null, 'leave' => null]],
+            'total_label' => '۸:۰۲',
+            'is_work_day' => true,
+            'is_incomplete' => true,
+            'is_off_day_work' => false,
+        ]);
+        $this->assertStringContainsString('کارکرد', $response->json('summary_html'));
+        $this->assertStringContainsString('محاسبه حقوق', $response->json('breakdown_html'));
+
+        $day = app(AttendanceDayRepository::class)->getForPeriod(PayrollPeriod::for(1405, 5))->first();
+        $this->assertSame(8 * 60 + 2, $day->workedMinutes());
 
         $this->get(route('payroll.show', ['year' => 1405, 'month' => 5]))->assertSee('۸:۰۲');
     }
 
-    public function test_invalid_times_are_rejected(): void
+    public function test_work_on_an_official_holiday_is_counted_as_overtime(): void
     {
-        $this->put(route('payroll.days.update', ['year' => 1405, 'month' => 5]), [
-            'days' => ['2026-07-18' => ['is_work_day' => '1', 'arrive' => [1 => '8:61'], 'leave' => [1 => 'ab']]],
-        ])->assertSessionHasErrors(['days.2026-07-18.arrive.1', 'days.2026-07-18.leave.1']);
+        $this->putJson($this->dayUrl(1405, 5, '2026-08-04'), [
+            'is_work_day' => false,
+            'note' => 'تعطیل رسمی',
+            'arrive' => [1 => '09:00'],
+            'leave' => [1 => '13:00'],
+        ])->assertOk()->assertJson(['is_off_day_work' => true]);
+
+        // The 4 hours count as worked time although the day adds nothing to the required time.
+        $settings = app(PayrollMonthRepository::class)->findOrDefaults(1405, 5);
+        $summary = app(PayrollCalculator::class)->calculate(
+            $settings,
+            app(AttendanceDayRepository::class)->getForPeriod(PayrollPeriod::for(1405, 5)),
+            today(),
+        );
+
+        $this->assertSame(4 * 60, $summary->workedMinutes);
+        $this->assertSame($summary->countedWorkDays * $settings->dailyWorkMinutes, $summary->requiredMinutes);
+        $this->assertSame(4 * 60 - $summary->requiredMinutes, $summary->differenceMinutes);
+    }
+
+    public function test_auto_save_rejects_invalid_times_and_days_outside_the_period(): void
+    {
+        $this->putJson($this->dayUrl(1405, 5, '2026-07-18'), ['is_work_day' => true, 'arrive' => [1 => '8:61'], 'leave' => [1 => 'ab']])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['arrive.1', 'leave.1']);
+
+        $this->putJson($this->dayUrl(1405, 5, '2026-09-01'), ['is_work_day' => true])->assertNotFound();
 
         $this->assertSame(0, DB::table('attendance_days')->count());
+    }
+
+    public function test_second_half_of_the_year_closes_on_the_25th(): void
+    {
+        $this->get(route('payroll.show', ['year' => 1405, 'month' => 8]))
+            ->assertOk()
+            ->assertSee('۲۶ مهر')
+            ->assertSee('۲۵ آبان')
+            ->assertSee('data-save-url="'.$this->dayUrl(1405, 8, '2026-10-18').'"', false) // 26 Mehr
+            ->assertDontSee('data-save-url="'.$this->dayUrl(1405, 8, '2026-11-17').'"', false); // 26 Aban
+    }
+
+    public function test_amount_settings_are_shown_with_thousands_separators(): void
+    {
+        $this->put(route('payroll.settings.update', ['year' => 1405, 'month' => 5]), [
+            'salary' => '13490000', 'daily_work_time' => '8:00', 'salary_divisor_days' => '26', 'overtime_multiplier' => '1.4',
+            'insurance_rate_percent' => '7', 'tax_rate_percent' => '10', 'tax_exemption' => '12000000', 'advance' => '0',
+        ]);
+
+        $this->get(route('payroll.show', ['year' => 1405, 'month' => 5]))
+            ->assertSee('value="13,490,000"', false)
+            ->assertSee('value="12,000,000"', false)
+            ->assertSee('data-amount-input', false);
+    }
+
+    private function dayUrl(int $year, int $month, string $date): string
+    {
+        return route('payroll.days.update', ['year' => $year, 'month' => $month, 'date' => $date]);
     }
 }
