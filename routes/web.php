@@ -33,6 +33,7 @@ Route::controller(AttendanceImportController::class)
     ->where(['import' => '[0-9]+'])
     ->group(function (): void {
         Route::post('/', 'store')->name('store');
+        Route::post('/excel', 'storeExcel')->name('excel');
         Route::get('/{import}', 'show')->name('show');
         Route::post('/{import}/apply', 'apply')->name('apply');
     });

@@ -1,14 +1,26 @@
 /**
  * Collapsible sections: a [data-collapsible="unique-key"] container with a
- * [data-collapse-toggle] button inside. The collapsed state is stored per key,
- * so it survives page reloads (e.g. after adding a task). Sections marked with
- * [data-collapsed-by-default] start collapsed until the user opens them.
+ * [data-collapse-toggle] button and a [data-collapse-body] inside (animated in app.css).
+ * The collapsed state is stored per key, so it survives page reloads (e.g. after adding a task).
+ * Sections marked with [data-collapsed-by-default] start collapsed until the user opens them,
+ * and [data-collapse-force-open] (e.g. a form with validation errors) always starts open.
  */
 const storageKey = (section) => `collapsed:${section.dataset.collapsible}`;
 
-const setCollapsed = (section, isCollapsed) => {
+const applyCollapsed = (section, isCollapsed) => {
     section.toggleAttribute('data-collapsed', isCollapsed);
     section.querySelector('[data-collapse-toggle]')?.setAttribute('aria-expanded', String(!isCollapsed));
+
+    // Content of a collapsed section cannot be focused or clicked.
+    const body = section.querySelector(':scope > [data-collapse-body]');
+
+    if (body) {
+        body.inert = isCollapsed;
+    }
+};
+
+const setCollapsed = (section, isCollapsed) => {
+    applyCollapsed(section, isCollapsed);
 
     try {
         localStorage.setItem(storageKey(section), isCollapsed ? '1' : '0');
@@ -26,11 +38,17 @@ document.querySelectorAll('[data-collapsible]').forEach((section) => {
         // Ignore unavailable storage.
     }
 
-    const isCollapsed = storedState === null ? section.hasAttribute('data-collapsed-by-default') : storedState === '1';
+    const isCollapsed = section.hasAttribute('data-collapse-force-open')
+        ? false
+        : storedState === null
+          ? section.hasAttribute('data-collapsed-by-default')
+          : storedState === '1';
 
-    section.toggleAttribute('data-collapsed', isCollapsed);
-    section.querySelector('[data-collapse-toggle]')?.setAttribute('aria-expanded', String(!isCollapsed));
+    applyCollapsed(section, isCollapsed);
 });
+
+// Enable the open/close animation only after the restored state has been painted.
+requestAnimationFrame(() => requestAnimationFrame(() => document.documentElement.setAttribute('data-collapse-animate', '')));
 
 document.addEventListener('click', (event) => {
     const toggle = event.target.closest('[data-collapse-toggle]');

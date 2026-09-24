@@ -189,6 +189,24 @@ window.addEventListener('beforeunload', (event) => {
     }
 });
 
+/* ---------- Excel upload ---------- */
+
+// Choosing files in the "ورود از اکسل" button uploads them right away.
+document.addEventListener('change', (event) => {
+    const input = event.target.closest('input[type="file"][data-auto-submit]');
+
+    if (!input || input.files.length === 0) {
+        return;
+    }
+
+    const label = input.closest('label');
+    label?.classList.add('pointer-events-none', 'opacity-60');
+    label?.setAttribute('aria-busy', 'true');
+    label?.querySelector('[data-upload-label]')?.replaceChildren('در حال خواندن...');
+
+    input.form.requestSubmit();
+});
+
 /* ---------- Thousands separators ---------- */
 
 const formatAmount = (digits) => digits.replace(/\B(?=(\d{3})+(?!\d))/g, ',');

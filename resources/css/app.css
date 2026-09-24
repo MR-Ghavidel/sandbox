@@ -8,3 +8,63 @@
         'Segoe UI Symbol', 'Noto Color Emoji';
     --font-vazir: 'Vazirmatn', Tahoma, ui-sans-serif, system-ui, sans-serif;
 }
+
+/*
+ * Privacy mode (eye button in the top bar): amounts marked with [data-sensitive] are replaced by dots.
+ * Every masked amount becomes the same fixed-width box, so the dots line up whatever the number's length.
+ */
+[data-hide-amounts] :not(input)[data-sensitive] {
+    display: inline-block;
+    position: relative;
+    width: 5.5em;
+    overflow: hidden;
+    vertical-align: bottom;
+    white-space: nowrap;
+    color: transparent !important;
+    user-select: none;
+}
+
+[data-hide-amounts] :not(input)[data-sensitive]::after {
+    content: '●●●●●●';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    color: var(--color-slate-400);
+    font-size: 0.7em;
+    letter-spacing: 0.15em;
+}
+
+[data-hide-amounts] input[data-sensitive] {
+    -webkit-text-security: disc;
+}
+
+/*
+ * Collapsible sections ([data-collapsible] with a [data-collapse-body] holding one inner element):
+ * the body animates between its full height and zero with a grid-rows transition.
+ * Transitions only run once the page is ready ([data-collapse-animate] on <html>), so restoring
+ * the saved open/closed state on page load does not animate.
+ */
+[data-collapse-body] {
+    display: grid;
+    grid-template-rows: 1fr;
+    opacity: 1;
+}
+
+[data-collapsed] > [data-collapse-body] {
+    grid-template-rows: 0fr;
+    opacity: 0;
+}
+
+[data-collapse-animate] [data-collapse-body] {
+    transition:
+        grid-template-rows 300ms ease,
+        opacity 250ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    [data-collapse-animate] [data-collapse-body] {
+        transition: none;
+    }
+}

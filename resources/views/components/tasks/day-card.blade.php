@@ -24,7 +24,8 @@
         </div>
     </div>
 
-    <div data-collapse-body class="border-t border-slate-100 group-data-[collapsed]/collapsible:hidden">
+    <div data-collapse-body>
+    <div class="min-h-0 overflow-hidden border-t border-slate-100">
         <div class="px-3 pt-3">
             <p data-empty @class(['pb-1 text-center text-sm text-slate-400', 'hidden' => $tasks->isNotEmpty()])>کاری برای این روز ثبت نشده</p>
 
@@ -48,5 +49,6 @@
             </label>
             <textarea name="description" rows="3" maxlength="5000" disabled placeholder="توضیحات..." class="hidden w-full rounded-md border border-slate-200 px-2 py-1.5 text-sm focus:border-sky-400 focus:outline-none"></textarea>
         </form>
+    </div>
     </div>
 </section>

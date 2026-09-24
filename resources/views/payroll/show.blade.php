@@ -9,11 +9,22 @@
             </p>
         </div>
 
+        <div class="flex flex-wrap items-center gap-2">
+        <form method="POST" action="{{ route('attendance-imports.excel') }}" enctype="multipart/form-data">
+            @csrf
+            <label class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm hover:bg-slate-50" title="فایل‌های اکسل ماهانه قبلی (xlsx) را انتخاب کنید؛ قبل از ثبت، پیش‌نمایش نشان داده می‌شود">
+                <svg class="size-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
+                <span data-upload-label>ورود از اکسل</span>
+                <input type="file" name="files[]" accept=".xlsx" multiple data-auto-submit class="sr-only">
+            </label>
+        </form>
+
         <nav class="flex items-center overflow-hidden rounded-lg border border-slate-200 bg-white text-sm">
             <a href="{{ route('payroll.show', ['year' => $period->previous()->year, 'month' => $period->previous()->month]) }}" class="px-3 py-2 hover:bg-slate-50">&rarr; {{ $period->previous()->label() }}</a>
             <a href="{{ route('payroll.index') }}" class="border-x border-slate-200 px-3 py-2 font-medium hover:bg-slate-50">ماه جاری</a>
             <a href="{{ route('payroll.show', ['year' => $period->next()->year, 'month' => $period->next()->month]) }}" class="px-3 py-2 hover:bg-slate-50">{{ $period->next()->label() }} &larr;</a>
         </nav>
+        </div>
     </div>
 
     @if (session('status'))
@@ -36,7 +47,7 @@
     </div>
 
     <div class="grid grid-cols-1 items-start gap-4 xl:grid-cols-[1fr_22rem]">
-        <x-payroll.days-table :days="$days" :period="$period" class="xl:order-1" />
+        <x-payroll.days-table :days="$days" :period="$period" class="min-w-0 xl:order-1" />
 
         <div class="space-y-4 xl:order-2">
             <div data-payroll-breakdown>

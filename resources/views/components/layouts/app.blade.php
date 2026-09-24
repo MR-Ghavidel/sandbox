@@ -9,6 +9,11 @@
 
         <title>{{ $title }}</title>
 
+        {{-- Hide amounts before the page paints if the user chose so (see resources/js/privacy.js). --}}
+        <script>
+            try { if (localStorage.getItem('hide-amounts') === '1') { document.documentElement.dataset.hideAmounts = ''; } } catch {}
+        </script>
+
         @fonts('vazirmatn')
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
@@ -31,9 +36,10 @@
                 </button>
                 <span class="font-bold">{{ $title }}</span>
 
-                @isset($actions)
-                    <div class="ms-auto flex items-center gap-2">{{ $actions }}</div>
-                @endisset
+                <div class="ms-auto flex items-center gap-2">
+                    {{ $actions ?? '' }}
+                    <x-privacy-toggle />
+                </div>
             </header>
 
             <main class="mx-auto max-w-[1600px] px-4 py-6 lg:px-6">

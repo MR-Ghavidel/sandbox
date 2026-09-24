@@ -16,13 +16,17 @@
     ];
 @endphp
 
-<section data-collapsible="payroll-settings" @if ($settings->id !== null) data-collapsed-by-default data-collapsed @endif class="group/collapsible rounded-xl border border-slate-200 bg-white shadow-sm">
+@php($hasErrors = $errors->hasAny(array_column($fields, 'name')))
+
+<section data-collapsible="payroll-settings-panel" data-collapsed-by-default @if ($hasErrors) data-collapse-force-open @else data-collapsed @endif class="group/collapsible rounded-xl border border-slate-200 bg-white shadow-sm">
     <div class="flex items-center justify-between px-4 py-3">
         <h2 class="font-bold">تنظیمات {{ $period->label() }}</h2>
         <x-collapse-toggle />
     </div>
 
-    <form data-collapse-body method="POST" action="{{ route('payroll.settings.update', ['year' => $period->year, 'month' => $period->month]) }}" class="space-y-3 border-t border-slate-100 p-4 group-data-[collapsed]/collapsible:hidden">
+    <div data-collapse-body>
+    <div class="min-h-0 overflow-hidden">
+    <form method="POST" action="{{ route('payroll.settings.update', ['year' => $period->year, 'month' => $period->month]) }}" class="space-y-3 border-t border-slate-100 p-4">
         @csrf
         @method('PUT')
 
@@ -33,7 +37,7 @@
         @foreach ($fields as $field)
             <label class="block text-sm">
                 <span class="mb-1 block font-medium">{{ $field['label'] }}</span>
-                <input type="text" inputmode="{{ isset($field['isAmount']) ? 'numeric' : 'decimal' }}" dir="ltr" @if (isset($field['isAmount'])) data-amount-input @endif name="{{ $field['name'] }}" value="{{ old($field['name'], $field['value']) }}" placeholder="{{ $field['placeholder'] ?? '' }}" @class([
+                <input type="text" inputmode="{{ isset($field['isAmount']) ? 'numeric' : 'decimal' }}" dir="ltr" @if (isset($field['isAmount'])) data-amount-input data-sensitive @endif name="{{ $field['name'] }}" value="{{ old($field['name'], $field['value']) }}" placeholder="{{ $field['placeholder'] ?? '' }}" @class([
                     'w-full rounded-md border px-2 py-1.5 text-left focus:border-sky-400 focus:outline-none',
                     'border-red-400' => $errors->has($field['name']),
                     'border-slate-200' => ! $errors->has($field['name']),
@@ -46,4 +50,6 @@
 
         <button type="submit" class="w-full rounded-md bg-sky-600 px-3 py-2 text-sm font-medium text-white hover:bg-sky-700">ذخیره تنظیمات</button>
     </form>
+    </div>
+    </div>
 </section>

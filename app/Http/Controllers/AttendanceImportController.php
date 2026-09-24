@@ -3,11 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreAttendanceImportRequest;
+use App\Http\Requests\StoreExcelAttendanceImportRequest;
 use App\Repositories\AttendanceImportRepository;
 use App\Support\AttendanceImporter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\UploadedFile;
 use Illuminate\View\View;
+use InvalidArgumentException;
 
 class AttendanceImportController extends Controller
 {
@@ -27,6 +30,24 @@ class AttendanceImportController extends Controller
     }
 
     /**
+     * Read uploaded monthly Excel sheets and show what they would change.
+     */
+    public function storeExcel(StoreExcelAttendanceImportRequest $request): RedirectResponse
+    {
+        try {
+            $importId = $this->importer->createFromExcel(
+                collect($request->file('files'))
+                    ->mapWithKeys(fn (UploadedFile $file): array => [$file->getClientOriginalName() => $file->getRealPath()])
+                    ->all(),
+            );
+        } catch (InvalidArgumentException $exception) {
+            return back()->withErrors(['files' => $exception->getMessage()]);
+        }
+
+        return to_route('attendance-imports.show', $importId);
+    }
+
+    /**
      * Show what the import would change before applying it.
      */
     public function show(int $import): View
@@ -36,6 +57,7 @@ class AttendanceImportController extends Controller
         return view('attendance-imports.show', [
             'import' => $attendanceImport,
             'rows' => $this->importer->preview($attendanceImport),
+            'payrollMonths' => $this->importer->payrollMonthsPreview($attendanceImport),
         ]);
     }
 

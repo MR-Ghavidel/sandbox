@@ -30,7 +30,8 @@
         </div>
     </div>
 
-    <div data-collapse-body class="border-t border-sky-100 px-4 py-3 group-data-[collapsed]/collapsible:hidden">
+    <div data-collapse-body>
+    <div class="min-h-0 overflow-hidden border-t border-sky-100 px-4 py-3">
         @if ($tasks->isEmpty())
             <p class="text-center text-sm text-slate-400">برای امروز کاری ثبت نشده</p>
         @else
@@ -50,5 +51,6 @@
                 @endforeach
             </ul>
         @endif
+    </div>
     </div>
 </section>

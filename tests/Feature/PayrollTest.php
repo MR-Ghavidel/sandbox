@@ -162,6 +162,16 @@ class PayrollTest extends TestCase
             ->assertSee('data-amount-input', false);
     }
 
+    public function test_salary_amounts_are_marked_for_privacy_mode(): void
+    {
+        $this->get(route('payroll.show', ['year' => 1405, 'month' => 5]))
+            ->assertOk()
+            ->assertSee('data-privacy-toggle', false)
+            ->assertSee('localStorage.getItem(\'hide-amounts\')', false)
+            ->assertSee('data-amount-input data-sensitive', false)
+            ->assertSee('text-sky-800" data-sensitive', false);
+    }
+
     private function dayUrl(int $year, int $month, string $date): string
     {
         return route('payroll.days.update', ['year' => $year, 'month' => $month, 'date' => $date]);

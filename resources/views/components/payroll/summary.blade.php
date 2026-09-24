@@ -37,7 +37,7 @@
 
     <div class="rounded-xl border border-sky-200 bg-gradient-to-l from-sky-50 to-white p-4 shadow-sm">
         <p class="text-sm text-slate-500">مبلغ دریافتی</p>
-        <p class="mt-1 text-2xl font-bold text-sky-800">{{ Number::format($summary->finalAmount, locale: 'fa') }}</p>
+        <p class="mt-1 text-2xl font-bold text-sky-800" data-sensitive>{{ Number::format($summary->finalAmount, locale: 'fa') }}</p>
         @if ($settings->salary === 0)
             <p class="mt-1 text-xs text-amber-700">حقوق این ماه هنوز وارد نشده</p>
         @endif

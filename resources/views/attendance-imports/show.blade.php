@@ -15,12 +15,14 @@
         ->map(fn (array $pair): string => ($pair['arrive'] ?? '??').'–'.($pair['leave'] ?? '??'))
         ->implode('  ');
     $changesCount = $rows->whereIn('status', [AttendanceImporter::STATUS_NEW, AttendanceImporter::STATUS_CHANGED])->count();
+    $newMonthsCount = $payrollMonths->where('is_new', true)->count();
+    $sourceLabel = $import->source === 'excel' ? 'اکسل' : 'بیزاجی';
 @endphp
 
-<x-layouts.app title="بررسی داده‌های بیزاجی">
+<x-layouts.app :title="'بررسی داده‌های '.$sourceLabel">
     <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold">بررسی داده‌های بیزاجی</h1>
+            <h1 class="text-2xl font-bold">بررسی داده‌های {{ $sourceLabel }}</h1>
             @if ($rows->isNotEmpty())
                 <p class="mt-1 text-sm text-slate-500">
                     {{ Number::format($rows->count(), locale: 'fa') }} روز، از {{ JalaliDate::format($rows->first()['date'], 'd MMMM') }} تا {{ JalaliDate::format($rows->last()['date'], 'd MMMM y') }}
@@ -31,10 +33,10 @@
 
         @if ($import->isApplied())
             <span class="rounded-lg bg-emerald-100 px-3 py-2 text-sm font-medium text-emerald-800">اعمال شده در {{ JalaliDate::format($import->appliedAt, 'd MMMM، HH:mm') }}</span>
-        @elseif ($changesCount > 0)
+        @elseif ($changesCount > 0 || $newMonthsCount > 0)
             <form method="POST" action="{{ route('attendance-imports.apply', $import->id) }}">
                 @csrf
-                <button type="submit" class="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">ثبت {{ Number::format($changesCount, locale: 'fa') }} روز</button>
+                <button type="submit" class="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700">ثبت {{ Number::format($changesCount, locale: 'fa') }} روز{{ $newMonthsCount > 0 ? ' و تنظیمات '.Number::format($newMonthsCount, locale: 'fa').' ماه' : '' }}</button>
             </form>
         @else
             <span class="rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-600">همه روزها از قبل به‌روز هستند</span>
@@ -43,6 +45,42 @@
 
     @if (session('status'))
         <div class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ session('status') }}</div>
+    @endif
+
+    @if ($payrollMonths->isNotEmpty())
+        <section class="mb-4 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+            <h2 class="border-b border-slate-100 px-4 py-3 font-bold">تنظیمات ماه‌ها</h2>
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50 text-xs text-slate-500">
+                    <tr>
+                        <th class="px-4 py-2 text-start font-medium">ماه</th>
+                        <th class="px-4 py-2 text-start font-medium">وضعیت</th>
+                        <th class="px-4 py-2 text-start font-medium">حقوق</th>
+                        <th class="px-4 py-2 text-start font-medium">ساعت کار روزانه</th>
+                        <th class="px-4 py-2 text-start font-medium">روزهای تقسیم</th>
+                        <th class="px-4 py-2 text-start font-medium">مساعده</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @foreach ($payrollMonths as $month)
+                        <tr @class(['text-slate-400' => ! $month['is_new']])>
+                            <td class="px-4 py-2 font-medium">{{ $month['period']->label() }}</td>
+                            <td class="px-4 py-2">
+                                @if ($month['is_new'])
+                                    <span class="rounded-full bg-sky-100 px-2 py-0.5 text-xs text-sky-700">جدید</span>
+                                @else
+                                    <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">از قبل ذخیره شده، تغییر نمی‌کند</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-2"><span data-sensitive>{{ Number::format($month['settings']->salary, locale: 'fa') }}</span></td>
+                            <td class="px-4 py-2" dir="ltr">{{ Duration::format($month['settings']->dailyWorkMinutes) }}</td>
+                            <td class="px-4 py-2">{{ Number::format($month['settings']->salaryDivisorDays, locale: 'fa') }}</td>
+                            <td class="px-4 py-2"><span data-sensitive>{{ Number::format($month['settings']->advance, locale: 'fa') }}</span></td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </section>
     @endif
 
     <section class="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
