@@ -7,12 +7,13 @@ use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
 /**
- * A salary period for a Jalali month: from the day after the previous month's
- * closing day up to and including this month's closing day. Months 1–6 close on
- * the 26th and months 7–12 on the 25th, so e.g. Mordad runs 27 Tir → 26 Mordad and
- * Aban runs 26 Mehr → 25 Aban. Where the rule switches, Mehr runs 27 Shahrivar →
- * 25 Mehr and Farvardin runs 26 Esfand → 26 Farvardin, so every day belongs to
- * exactly one period.
+ * A salary period for a Jalali month, following the company's work-hours reporting rule:
+ * - months 1–6 run from the 27th of the previous month to the 26th (e.g. Mordad: 27 Tir → 26 Mordad),
+ * - months 7–12 run from the 26th of the previous month to the 25th (e.g. Aban: 26 Mehr → 25 Aban).
+ *
+ * Where the rule switches, periods overlap or leave a gap: 26 Shahrivar belongs to both Shahrivar
+ * (27 Mordad → 26 Shahrivar) and Mehr (26 Shahrivar → 25 Mehr), and 26 Esfand belongs to no period
+ * (Esfand ends on the 25th, Farvardin starts on 27 Esfand).
  */
 final readonly class PayrollPeriod
 {
@@ -22,6 +23,14 @@ final readonly class PayrollPeriod
     public static function closingDay(int $month): int
     {
         return $month <= 6 ? 26 : 25;
+    }
+
+    /**
+     * The Jalali day of the previous month on which the given month's period starts.
+     */
+    public static function startDay(int $month): int
+    {
+        return $month <= 6 ? 27 : 26;
     }
 
     private function __construct(
@@ -41,13 +50,14 @@ final readonly class PayrollPeriod
         return new self(
             year: $year,
             month: $month,
-            startDate: JalaliDate::toGregorian($previousYear, $previousMonth, self::closingDay($previousMonth))->addDay(),
+            startDate: JalaliDate::toGregorian($previousYear, $previousMonth, self::startDay($month)),
             endDate: JalaliDate::toGregorian($year, $month, self::closingDay($month)),
         );
     }
 
     /**
-     * The period that the given day belongs to.
+     * The period that the given day is reported in: its own month up to the closing day, the next month
+     * after it. So 26 Shahrivar gives Shahrivar (it is also in Mehr), and 26 Esfand gives the coming Farvardin.
      */
     public static function containing(CarbonInterface $date): self
     {
@@ -62,12 +72,12 @@ final readonly class PayrollPeriod
 
     public function previous(): self
     {
-        return self::containing($this->startDate->subDay());
+        return $this->month === 1 ? self::for($this->year - 1, 12) : self::for($this->year, $this->month - 1);
     }
 
     public function next(): self
     {
-        return self::containing($this->endDate->addDay());
+        return $this->month === 12 ? self::for($this->year + 1, 1) : self::for($this->year, $this->month + 1);
     }
 
     /**

@@ -31,9 +31,10 @@ class PayrollPeriodTest extends TestCase
         $mehr = PayrollPeriod::for(1405, 7);
         $aban = PayrollPeriod::for(1405, 8);
 
-        // Mehr starts the day after Shahrivar's closing day (26th), so it is one day shorter.
-        $this->assertSame('2026-09-18', $mehr->startDate->toDateString()); // 27 Shahrivar
+        // Like every second-half month, Mehr starts on the 26th of the previous month.
+        $this->assertSame('2026-09-17', $mehr->startDate->toDateString()); // 26 Shahrivar
         $this->assertSame('2026-10-17', $mehr->endDate->toDateString());   // 25 Mehr
+        $this->assertCount(31, $mehr->days());
         $this->assertSame('2026-10-18', $aban->startDate->toDateString()); // 26 Mehr
         $this->assertSame('2026-11-16', $aban->endDate->toDateString());   // 25 Aban
 
@@ -41,14 +42,25 @@ class PayrollPeriodTest extends TestCase
         $this->assertSame([1405, 8], $this->yearAndMonth(PayrollPeriod::containing(CarbonImmutable::parse('2026-10-18'))));
     }
 
-    public function test_farvardin_starts_the_day_after_esfand_closes_on_the_25th(): void
+    public function test_the_rule_switch_overlaps_on_26_shahrivar_and_skips_26_esfand(): void
     {
+        $shahrivar = PayrollPeriod::for(1405, 6);
+        $mehr = PayrollPeriod::for(1405, 7);
         $esfand = PayrollPeriod::for(1405, 12);
         $farvardin = PayrollPeriod::for(1406, 1);
 
-        $this->assertTrue($farvardin->startDate->equalTo($esfand->endDate->addDay()));
-        $this->assertSame('۲۶ اسفند', JalaliDate::format($farvardin->startDate, 'd MMMM'));
+        // 26 Shahrivar is in both Shahrivar and Mehr.
+        $this->assertTrue($shahrivar->endDate->equalTo($mehr->startDate));
+
+        // 26 Esfand is in neither Esfand (ends 25 Esfand) nor Farvardin (starts 27 Esfand).
+        $this->assertSame('۲۵ اسفند', JalaliDate::format($esfand->endDate, 'd MMMM'));
+        $this->assertSame('۲۷ اسفند', JalaliDate::format($farvardin->startDate, 'd MMMM'));
         $this->assertSame('۲۶ فروردین', JalaliDate::format($farvardin->endDate, 'd MMMM'));
+        $this->assertSame(2, (int) $esfand->endDate->diffInDays($farvardin->startDate));
+
+        // Moving between months is by month number, so the gap does not confuse it.
+        $this->assertSame([1405, 12], $this->yearAndMonth($farvardin->previous()));
+        $this->assertSame([1406, 1], $this->yearAndMonth($esfand->next()));
     }
 
     public function test_period_wraps_around_the_year(): void
