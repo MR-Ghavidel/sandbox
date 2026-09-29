@@ -236,7 +236,13 @@ php artisan attendance:import-excel "C:\path\01_Mehr.xlsx" "C:\path\02_Aban.xlsx
 - **کروم / Edge:** `chrome://extensions` ← روشن کردن Developer mode ← **Load unpacked** ← انتخاب پوشه `browser-extension/bizagi-export`.
 - **فایرفاکس (نسخه ۱۲۸ به بعد):** `about:debugging#/runtime/this-firefox` ← **Load Temporary Add-on** ← انتخاب فایل `manifest.json` همان پوشه. (افزونه موقت با بستن فایرفاکس حذف می‌شود.)
 
-بعد از نصب، روی آیکون افزونه بزنید ← **تنظیمات** ← آدرس سامانه را وارد کنید (مثلاً `http://localhost:8000` در داکر یا `http://sandbox.test` در لاراگون) و **ذخیره آدرس** را بزنید و اجازه دسترسی را تأیید کنید.
+افزونه آدرس سامانه را از `APP_URL` در `.env` می‌خواند. قبل از نصب (و هر بار که `APP_URL` را عوض کردید) این دستور را اجرا کنید و بعد افزونه را در صفحه افزونه‌های مرورگر Reload کنید:
+
+```bash
+php artisan bizagi-extension:configure
+```
+
+(`composer run setup` این کار را خودش انجام می‌دهد.) برای استفاده از آدرس دیگر: روی آیکون افزونه ← **تنظیمات** ← آدرس را وارد کنید و **ذخیره آدرس** را بزنید. خالی گذاشتن فیلد و ذخیره، دوباره آدرس `.env` را برمی‌گرداند.
 
 ---
 

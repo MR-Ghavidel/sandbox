@@ -106,7 +106,7 @@
                         <td class="px-4 py-2 text-slate-500 dark:text-slate-400" dir="ltr">{{ $row['current'] ? $pairsText($row['current']->pairs) : '' }}</td>
                         <td class="px-4 py-2">
                             <span dir="ltr">{{ $pairsText($row['merged']->pairs) }}</span>
-                            @if (! $row['merged']->isWorkDay)
+                            @if (! $row['merged']->isWorkDay || $row['merged']->note !== null)
                                 <span class="ms-2 rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-xs text-slate-600 dark:text-slate-300">{{ $row['merged']->note ?? 'غیرکاری' }}</span>
                             @endif
                             @if ($row['merged']->hasIncompletePair())

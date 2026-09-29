@@ -22,6 +22,8 @@ use InvalidArgumentException;
  * - Excel days bring their own "work day" flag and note, which replace the saved ones.
  * - A holiday in Bizagi (e.g. "تعطیلی جمعه") makes the day a non-work day. Otherwise the saved
  *   "work day" flag and note are kept, so manual choices (leave, official holidays) survive.
+ * - Hourly leave in Bizagi becomes the day's note. Paid leave also becomes a time pair, because
+ *   Bizagi counts it as worked time; unpaid leave ("بدون حقوق") does not.
  * - Monthly settings from Excel are saved only for months that have no saved settings yet.
  */
 class AttendanceImporter
@@ -150,14 +152,21 @@ class AttendanceImporter
     }
 
     /**
-     * @param  array{date: string, pairs: list<array{arrive: ?string, leave: ?string}>, holiday_label: ?string, is_work_day?: bool, note?: ?string}  $incoming
+     * @param  array{date: string, pairs: list<array{arrive: ?string, leave: ?string}>, leaves?: list<array{label: string, from: string, to: string}>, holiday_label: ?string, is_work_day?: bool, note?: ?string}  $incoming
      */
     private function merge(CarbonImmutable $date, array $incoming, ?AttendanceDayEntity $current): AttendanceDayEntity
     {
         $base = $current ?? AttendanceDayEntity::blank($date);
-        $incomingPairs = array_pad(array_slice($incoming['pairs'], 0, AttendanceDayEntity::PAIRS_PER_DAY), AttendanceDayEntity::PAIRS_PER_DAY, ['arrive' => null, 'leave' => null]);
+        $leaves = collect($incoming['leaves'] ?? []);
+        // Pairs are rebuilt key by key: MySQL's JSON column reorders object keys, which would make
+        // identical pairs fail the strict comparison in status().
+        $incomingPairs = array_map(
+            fn (array $pair): array => ['arrive' => $pair['arrive'] ?? null, 'leave' => $pair['leave'] ?? null],
+            array_pad(array_slice($this->withPaidLeaves($incoming['pairs'], $leaves), 0, AttendanceDayEntity::PAIRS_PER_DAY), AttendanceDayEntity::PAIRS_PER_DAY, []),
+        );
         $hasIncomingTimes = collect($incomingPairs)->contains(fn (array $pair): bool => $pair['arrive'] !== null || $pair['leave'] !== null);
         $holidayLabel = $incoming['holiday_label'];
+        $leaveNote = $leaves->map(fn (array $leave): string => "{$leave['label']} {$leave['from']}–{$leave['to']}")->implode('، ');
 
         // Excel sheets say explicitly whether a day is a work day and carry the user's own note.
         if (array_key_exists('is_work_day', $incoming)) {
@@ -175,12 +184,36 @@ class AttendanceImporter
             date: $date,
             isWorkDay: $holidayLabel === null ? $base->isWorkDay : false,
             note: match (true) {
-                $holidayLabel === null => $base->note,
-                str_contains($holidayLabel, 'جمعه') => 'جمعه',
-                default => $holidayLabel,
+                $holidayLabel !== null && str_contains($holidayLabel, 'جمعه') => 'جمعه',
+                $holidayLabel !== null => $holidayLabel,
+                $leaveNote !== '' => $leaveNote,
+                default => $base->note,
             },
             pairs: $hasIncomingTimes ? $incomingPairs : $base->pairs,
         );
+    }
+
+    /**
+     * Add paid hourly leaves to the day's pairs and keep the pairs in time order.
+     *
+     * @param  list<array{arrive: ?string, leave: ?string}>  $pairs
+     * @param  Collection<int, array{label: string, from: string, to: string}>  $leaves
+     * @return list<array{arrive: ?string, leave: ?string}>
+     */
+    private function withPaidLeaves(array $pairs, Collection $leaves): array
+    {
+        $paidLeaves = $leaves->reject(fn (array $leave): bool => str_contains($leave['label'], 'بدون حقوق'));
+
+        if ($paidLeaves->isEmpty()) {
+            return $pairs;
+        }
+
+        return collect($pairs)
+            ->filter(fn (array $pair): bool => $pair['arrive'] !== null || $pair['leave'] !== null)
+            ->merge($paidLeaves->map(fn (array $leave): array => ['arrive' => $leave['from'], 'leave' => $leave['to']]))
+            ->sortBy(fn (array $pair): string => $pair['arrive'] ?? $pair['leave'])
+            ->values()
+            ->all();
     }
 
     /**

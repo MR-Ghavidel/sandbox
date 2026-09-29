@@ -6,7 +6,10 @@
  * and every row is identified by the Jalali date written in it, because the visible range
  * of days in Bizagi is not fixed.
  *
- * @returns {{days: Array<{date: string, pairs: Array<{arrive: ?string, leave: ?string}>, holiday_label: ?string}>}}
+ * Hourly leave takes a pair of its own: the arrive cell holds its type ("استحقاقی ساعتی") and the leave
+ * cell its range ("از ساعت 13:10 تا 15:10"). It is returned in "leaves", not as a holiday.
+ *
+ * @returns {{days: Array<{date: string, pairs: Array<{arrive: ?string, leave: ?string}>, leaves: Array<{label: string, from: string, to: string}>, holiday_label: ?string}>}}
  */
 export function extractBizagiAttendance() {
     const toLatinDigits = (value) =>
@@ -14,7 +17,11 @@ export function extractBizagiAttendance() {
             .replace(/[۰-۹]/g, (digit) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(digit))
             .replace(/[٠-٩]/g, (digit) => '٠١٢٣٤٥٦٧٨٩'.indexOf(digit));
 
-    const clean = (value) => toLatinDigits((value ?? '').replace(/\s+/g, ' ').trim());
+    // Bizagi mixes Arabic "ي" and "ك" into Persian labels.
+    const clean = (value) =>
+        toLatinDigits((value ?? '').replace(/\s+/g, ' ').trim())
+            .replace(/ي/g, 'ی')
+            .replace(/ك/g, 'ک');
 
     const cellValue = (cell) => {
         const input = cell?.querySelector('input, textarea');
@@ -66,10 +73,18 @@ export function extractBizagiAttendance() {
             }
 
             let holidayLabel = null;
+            const leaves = [];
 
             const pairs = pairNumbers.map((pair) => {
                 const arrive = cellValue(cells[columns.arrive[pair]]);
                 const leave = cellValue(cells[columns.leave[pair]]);
+                const leaveRange = leave.match(/(\d{1,2}:\d{2})\D+(\d{1,2}:\d{2})/);
+
+                if (leaveRange && !isTime(arrive)) {
+                    leaves.push({ label: arrive, from: leaveRange[1].padStart(5, '0'), to: leaveRange[2].padStart(5, '0') });
+
+                    return { arrive: null, leave: null };
+                }
 
                 // Cells like "تعطیلی جمعه" are not times but tell us the day is off.
                 for (const value of [arrive, leave]) {
@@ -81,7 +96,7 @@ export function extractBizagiAttendance() {
                 return { arrive: asTime(arrive), leave: asTime(leave) };
             });
 
-            days.push({ date: `${dateMatch[1]}/${dateMatch[2]}/${dateMatch[3]}`, pairs, holiday_label: holidayLabel });
+            days.push({ date: `${dateMatch[1]}/${dateMatch[2]}/${dateMatch[3]}`, pairs, leaves, holiday_label: holidayLabel });
         }
 
         if (days.length > 0) {
