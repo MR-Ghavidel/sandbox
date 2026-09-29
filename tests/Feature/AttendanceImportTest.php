@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Entities\AttendanceDayEntity;
 use App\Repositories\AttendanceDayRepository;
+use App\Repositories\AttendanceImportRepository;
+use App\Support\AttendanceImporter;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -31,7 +33,7 @@ class AttendanceImportTest extends TestCase
         $days = json_decode($import->days, true);
 
         $this->assertSame(route('attendance-imports.show', $import->id), $response->json('preview_url'));
-        $this->assertSame(['date' => '2026-09-11', 'pairs' => [['arrive' => null, 'leave' => null]], 'holiday_label' => 'تعطیلی جمعه'], $days[0]);
+        $this->assertSame(['date' => '2026-09-11', 'pairs' => [['arrive' => null, 'leave' => null]], 'leaves' => [], 'holiday_label' => 'تعطیلی جمعه'], $days[0]);
         $this->assertSame(['arrive' => '11:32', 'leave' => '17:36'], $days[1]['pairs'][0]);
         $this->assertSame(['arrive' => '08:23', 'leave' => null], $days[3]['pairs'][0]);
         $this->assertDatabaseCount('attendance_days', 0);
@@ -81,6 +83,72 @@ class AttendanceImportTest extends TestCase
         $this->assertNotNull(DB::table('attendance_imports')->value('applied_at'));
 
         $this->get($previewUrl)->assertSee('اعمال شده');
+    }
+
+    public function test_saved_days_are_unchanged_when_the_stored_import_has_reordered_pair_keys(): void
+    {
+        app(AttendanceDayRepository::class)->saveMany([
+            new AttendanceDayEntity(null, CarbonImmutable::parse('2026-09-12'), true, null, [['arrive' => '11:32', 'leave' => '17:36'], ...array_fill(0, 3, ['arrive' => null, 'leave' => null])]),
+        ]);
+
+        // MySQL's JSON column stores {"arrive", "leave"} as {"leave", "arrive"}.
+        $importId = app(AttendanceImportRepository::class)->create('bizagi', [
+            ['date' => '2026-09-12', 'pairs' => [['leave' => '17:36', 'arrive' => '11:32']], 'leaves' => [], 'holiday_label' => null],
+        ]);
+
+        $this->assertSame(AttendanceImporter::STATUS_UNCHANGED, app(AttendanceImporter::class)->preview(app(AttendanceImportRepository::class)->findOrFail($importId))->sole()['status']);
+    }
+
+    public function test_paid_hourly_leave_counts_as_worked_time_and_unpaid_leave_only_adds_a_note(): void
+    {
+        // Taken from a real Bizagi grid: the leave sits in pair 1, the work before it in pair 2.
+        $previewUrl = $this->postJson(route('attendance-imports.store'), [
+            'source' => 'bizagi',
+            'days' => [
+                [
+                    'date' => '1405/06/26',
+                    'pairs' => [['arrive' => null, 'leave' => null], ['arrive' => '07:56', 'leave' => '13:04']],
+                    'leaves' => [['label' => 'استحقاقی ساعتی', 'from' => '13:10', 'to' => '15:10']],
+                    'holiday_label' => null,
+                ],
+                [
+                    'date' => '1405/06/28',
+                    'pairs' => [['arrive' => '10:00', 'leave' => '16:00']],
+                    'leaves' => [['label' => 'بدون حقوق ساعتی', 'from' => '08:00', 'to' => '10:00']],
+                    'holiday_label' => null,
+                ],
+            ],
+        ])->assertCreated()->json('preview_url');
+
+        $this->get($previewUrl)->assertOk()->assertSee('استحقاقی ساعتی 13:10–15:10');
+
+        $this->post(route('attendance-imports.apply', DB::table('attendance_imports')->value('id')));
+
+        $days = app(AttendanceDayRepository::class)->getBetween(CarbonImmutable::parse('2026-09-17'), CarbonImmutable::parse('2026-09-19'));
+
+        $this->assertTrue($days['2026-09-17']->isWorkDay);
+        $this->assertSame([['arrive' => '07:56', 'leave' => '13:04'], ['arrive' => '13:10', 'leave' => '15:10']], array_slice($days['2026-09-17']->pairs, 0, 2));
+        $this->assertSame(7 * 60 + 8, $days['2026-09-17']->workedMinutes());
+        $this->assertSame('استحقاقی ساعتی 13:10–15:10', $days['2026-09-17']->note);
+
+        $this->assertTrue($days['2026-09-19']->isWorkDay);
+        $this->assertSame(6 * 60, $days['2026-09-19']->workedMinutes());
+        $this->assertSame('بدون حقوق ساعتی 08:00–10:00', $days['2026-09-19']->note);
+    }
+
+    public function test_configure_command_writes_app_url_into_the_extension(): void
+    {
+        $configPath = base_path('browser-extension/bizagi-export/config.js');
+        $originalConfig = is_file($configPath) ? file_get_contents($configPath) : null;
+        config(['app.url' => 'https://work.example.test/']);
+
+        try {
+            $this->artisan('bizagi-extension:configure')->assertSuccessful();
+
+            $this->assertStringContainsString('export const APP_URL = "https://work.example.test";', file_get_contents($configPath));
+        } finally {
+            $originalConfig === null ? unlink($configPath) : file_put_contents($configPath, $originalConfig);
+        }
     }
 
     /**

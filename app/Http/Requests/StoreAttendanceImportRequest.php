@@ -35,6 +35,10 @@ class StoreAttendanceImportRequest extends FormRequest
             'days.*.pairs' => ['present', 'array', 'max:'.AttendanceDayEntity::PAIRS_PER_DAY],
             'days.*.pairs.*.arrive' => ['nullable', 'string', 'max:20'],
             'days.*.pairs.*.leave' => ['nullable', 'string', 'max:20'],
+            'days.*.leaves' => ['sometimes', 'array', 'max:'.AttendanceDayEntity::PAIRS_PER_DAY],
+            'days.*.leaves.*.label' => ['required', 'string', 'max:100'],
+            'days.*.leaves.*.from' => ['required', 'string', 'max:20'],
+            'days.*.leaves.*.to' => ['required', 'string', 'max:20'],
             'days.*.holiday_label' => ['nullable', 'string', 'max:100'],
         ];
     }
@@ -55,9 +59,9 @@ class StoreAttendanceImportRequest extends FormRequest
 
     /**
      * The received days converted to Gregorian dates with normalized times.
-     * Values that are not times (e.g. "تعطیلی جمعه") are ignored.
+     * Values that are not times (e.g. "تعطیلی جمعه") are ignored, and so are hourly leaves without a valid range.
      *
-     * @return list<array{date: string, pairs: list<array{arrive: ?string, leave: ?string}>, holiday_label: ?string}>
+     * @return list<array{date: string, pairs: list<array{arrive: ?string, leave: ?string}>, leaves: list<array{label: string, from: string, to: string}>, holiday_label: ?string}>
      */
     public function normalizedDays(): array
     {
@@ -77,6 +81,15 @@ class StoreAttendanceImportRequest extends FormRequest
                         'arrive' => $timeOrNull($pair['arrive'] ?? null),
                         'leave' => $timeOrNull($pair['leave'] ?? null),
                     ])->values()->all(),
+                    'leaves' => collect($day['leaves'] ?? [])
+                        ->map(fn (array $leave): array => [
+                            'label' => trim($leave['label']),
+                            'from' => $timeOrNull($leave['from']),
+                            'to' => $timeOrNull($leave['to']),
+                        ])
+                        ->filter(fn (array $leave): bool => $leave['from'] !== null && $leave['to'] !== null)
+                        ->values()
+                        ->all(),
                     'holiday_label' => filled($day['holiday_label'] ?? null) ? trim($day['holiday_label']) : null,
                 ];
             })

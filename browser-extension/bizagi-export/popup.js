@@ -1,6 +1,8 @@
 import { extractBizagiAttendance } from './extract.js';
 
-const DEFAULT_APP_URL = 'https://sandbox.local';
+// config.js is written from the project's APP_URL by `php artisan bizagi-extension:configure`.
+const { APP_URL: CONFIGURED_APP_URL } = await import('./config.js').catch(() => ({}));
+const DEFAULT_APP_URL = CONFIGURED_APP_URL || 'https://sandbox.local';
 
 const statusElement = document.getElementById('status');
 const previewTable = document.getElementById('preview');
@@ -12,6 +14,16 @@ let extractedDays = [];
 const showStatus = (message, type = 'info') => {
     statusElement.textContent = message;
     statusElement.className = `status ${type === 'info' ? '' : type}`;
+};
+
+/**
+ * "sandbox.test/" → "https://sandbox.test". Throws when the value is not a URL.
+ */
+const normalizeUrl = (value) => {
+    const trimmed = value.trim();
+    const url = new URL(/^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`);
+
+    return `${url.origin}${url.pathname}`.replace(/\/+$/, '');
 };
 
 const getAppUrl = async () => {
@@ -32,10 +44,12 @@ const renderPreview = (days) => {
         times.className = 'times';
         times.textContent =
             day.holiday_label ??
-            day.pairs
-                .filter((pair) => pair.arrive || pair.leave)
-                .map((pair) => `${pair.arrive ?? '??'}–${pair.leave ?? '??'}`)
-                .join('  ');
+            [
+                ...day.pairs
+                    .filter((pair) => pair.arrive || pair.leave)
+                    .map((pair) => `${pair.arrive ?? '??'}–${pair.leave ?? '??'}`),
+                ...day.leaves.map((leave) => `${leave.label} ${leave.from}–${leave.to}`),
+            ].join('  ');
     }
 
     previewTable.hidden = days.length === 0;
@@ -69,7 +83,15 @@ const readBizagiTable = async () => {
 };
 
 sendButton.addEventListener('click', async () => {
-    const appUrl = (appUrlInput.value.trim() || DEFAULT_APP_URL).replace(/\/+$/, '');
+    let appUrl;
+
+    try {
+        appUrl = appUrlInput.value.trim() ? normalizeUrl(appUrlInput.value) : DEFAULT_APP_URL;
+    } catch {
+        showStatus('آدرس سامانه معتبر نیست. آن را در تنظیمات اصلاح کنید.', 'error');
+
+        return;
+    }
 
     // Firefox may not grant host permissions at install time. The request has to start directly in the
     // click handler (before any await) to count as a user action; Chrome simply answers "granted".
@@ -104,24 +126,41 @@ sendButton.addEventListener('click', async () => {
 });
 
 document.getElementById('save-url').addEventListener('click', async () => {
-    const appUrl = appUrlInput.value.trim().replace(/\/+$/, '');
+    // An empty field goes back to the address from the project's .env.
+    if (!appUrlInput.value.trim()) {
+        await chrome.storage.local.remove('appUrl');
+        appUrlInput.value = DEFAULT_APP_URL;
+        showStatus(`آدرس پیش‌فرض (${DEFAULT_APP_URL}) استفاده می‌شود.`, 'success');
+
+        return;
+    }
+
+    let appUrl;
 
     try {
-        const origin = new URL(appUrl).origin;
-        const isGranted = await chrome.permissions.request({ origins: [`${origin}/*`] });
-
-        if (!isGranted) {
-            showStatus('اجازه دسترسی به این آدرس داده نشد.', 'error');
-
-            return;
-        }
-
-        await chrome.storage.local.set({ appUrl });
-        showStatus('آدرس ذخیره شد.', 'success');
+        appUrl = normalizeUrl(appUrlInput.value);
     } catch {
         showStatus('آدرس معتبر نیست.', 'error');
+
+        return;
+    }
+
+    // The permission prompt can close the popup and drop everything after it, so the address is
+    // saved first. The request still starts before any await to count as a user action.
+    const permissionRequest = chrome.permissions.request({ origins: [`${new URL(appUrl).origin}/*`] });
+    await chrome.storage.local.set({ appUrl });
+    appUrlInput.value = appUrl;
+
+    try {
+        showStatus(
+            (await permissionRequest) ? 'آدرس ذخیره شد.' : 'آدرس ذخیره شد، ولی اجازه دسترسی داده نشد؛ هنگام ارسال دوباره پرسیده می‌شود.',
+            'success',
+        );
+    } catch (error) {
+        showStatus(`آدرس ذخیره شد، ولی درخواست اجازه دسترسی خطا داد: ${error.message}`, 'error');
     }
 });
 
+appUrlInput.placeholder = DEFAULT_APP_URL;
 appUrlInput.value = await getAppUrl();
 readBizagiTable();
