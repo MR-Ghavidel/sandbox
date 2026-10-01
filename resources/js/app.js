@@ -5,6 +5,8 @@ import './collapsible';
 import './privacy';
 import './theme';
 import './tasks';
+import './forms';
+import './notes';
 import './payroll';
 import './month-picker';
 import './tools/clipboard';

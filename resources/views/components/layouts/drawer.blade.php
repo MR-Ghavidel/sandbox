@@ -3,7 +3,10 @@
 
 <aside class="fixed inset-y-0 right-0 z-40 flex w-64 translate-x-full flex-col border-s border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 transition-transform duration-200 group-data-[drawer=open]/body:translate-x-0">
     <div class="flex h-14 items-center justify-between border-b border-slate-200 dark:border-slate-700 px-4">
-        <span class="text-lg font-bold">{{ config('app.name') }}</span>
+        <a href="{{ route('home') }}" class="flex items-center gap-2 text-lg font-bold">
+            <img src="{{ asset('images/logo.svg') }}" alt="" class="size-7">
+            {{ config('app.name') }}
+        </a>
         <button type="button" data-drawer-close class="rounded-md p-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="بستن منو">
             <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
         </button>
