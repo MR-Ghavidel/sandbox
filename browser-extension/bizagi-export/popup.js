@@ -1,4 +1,5 @@
 import { extractBizagiAttendance } from './extract.js';
+import { collectBrowserSites } from './sites.js';
 
 // config.js is written from the project's APP_URL by `php artisan bizagi-extension:configure`.
 const { APP_URL: CONFIGURED_APP_URL } = await import('./config.js').catch(() => ({}));
@@ -7,6 +8,7 @@ const DEFAULT_APP_URL = CONFIGURED_APP_URL || 'https://sandbox.local';
 const statusElement = document.getElementById('status');
 const previewTable = document.getElementById('preview');
 const sendButton = document.getElementById('send');
+const sendSitesButton = document.getElementById('send-sites');
 const appUrlInput = document.getElementById('app-url');
 
 let extractedDays = [];
@@ -82,7 +84,15 @@ const readBizagiTable = async () => {
     sendButton.disabled = false;
 };
 
-sendButton.addEventListener('click', async () => {
+/**
+ * Posts data to the app and opens the review page it returns.
+ * Must be called straight from a click handler: the permission request has to start before any await
+ * to count as a user action. Firefox may not grant host permissions at install time, and optional API
+ * permissions (history, ...) are always asked here; Chrome answers "granted" for what it already has.
+ *
+ * @param {{button: HTMLButtonElement, path: string, permissions?: string[], buildBody: (appUrl: string) => Promise<object>}} options
+ */
+const sendToApp = async ({ button, path, permissions = [], buildBody }) => {
     let appUrl;
 
     try {
@@ -93,22 +103,20 @@ sendButton.addEventListener('click', async () => {
         return;
     }
 
-    // Firefox may not grant host permissions at install time. The request has to start directly in the
-    // click handler (before any await) to count as a user action; Chrome simply answers "granted".
-    const permissionRequest = chrome.permissions.request({ origins: [`${new URL(appUrl).origin}/*`] });
+    const permissionRequest = chrome.permissions.request({ origins: [`${new URL(appUrl).origin}/*`], permissions });
 
-    sendButton.disabled = true;
+    button.disabled = true;
     showStatus('در حال ارسال...');
 
     try {
         if (!(await permissionRequest)) {
-            throw new Error('اجازه دسترسی به آدرس سامانه داده نشد');
+            throw new Error('اجازه دسترسی داده نشد');
         }
 
-        const response = await fetch(`${appUrl}/attendance-imports`, {
+        const response = await fetch(`${appUrl}${path}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-            body: JSON.stringify({ source: 'bizagi', days: extractedDays }),
+            body: JSON.stringify(await buildBody(appUrl)),
         });
 
         if (!response.ok) {
@@ -121,9 +129,34 @@ sendButton.addEventListener('click', async () => {
         await chrome.tabs.create({ url: previewUrl });
     } catch (error) {
         showStatus(`ارسال ناموفق بود: ${error.message}. آدرس سامانه را در تنظیمات بررسی کنید.`, 'error');
-        sendButton.disabled = false;
+        button.disabled = false;
     }
-});
+};
+
+sendButton.addEventListener('click', () =>
+    sendToApp({
+        button: sendButton,
+        path: '/attendance-imports',
+        buildBody: async () => ({ source: 'bizagi', days: extractedDays }),
+    }),
+);
+
+sendSitesButton.addEventListener('click', () =>
+    sendToApp({
+        button: sendSitesButton,
+        path: '/site-imports',
+        permissions: ['topSites', 'history', 'bookmarks'],
+        buildBody: async (appUrl) => {
+            const sites = await collectBrowserSites({ excludeOrigin: new URL(appUrl).origin });
+
+            if (sites.length === 0) {
+                throw new Error('سایتی در مرورگر پیدا نشد');
+            }
+
+            return { sites };
+        },
+    }),
+);
 
 document.getElementById('save-url').addEventListener('click', async () => {
     // An empty field goes back to the address from the project's .env.

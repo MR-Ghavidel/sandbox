@@ -3,7 +3,10 @@
 use App\Http\Controllers\AttendanceImportController;
 use App\Http\Controllers\CarryOverTaskController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\NoteController;
 use App\Http\Controllers\PayrollController;
+use App\Http\Controllers\SiteController;
+use App\Http\Controllers\SiteImportController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TaskOrderController;
 use Illuminate\Support\Facades\Route;
@@ -24,6 +27,35 @@ Route::controller(PayrollController::class)
         Route::get('/{year}/{month}', 'show')->name('show');
         Route::put('/{year}/{month}/settings', 'updateSettings')->name('settings.update');
         Route::put('/{year}/{month}/days/{date}', 'updateDay')->name('days.update');
+    });
+
+Route::post('/notes/preview', [NoteController::class, 'preview'])->name('notes.preview');
+Route::patch('/notes/{note}/pin', [NoteController::class, 'pin'])->name('notes.pin')->where('note', '[0-9]+');
+Route::resource('notes', NoteController::class)->where(['note' => '[0-9]+']);
+
+Route::controller(SiteController::class)
+    ->prefix('sites')
+    ->name('sites.')
+    ->where(['site' => '[0-9]+'])
+    ->group(function (): void {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{site}/edit', 'edit')->name('edit');
+        Route::put('/{site}', 'update')->name('update');
+        Route::patch('/{site}/pin', 'pin')->name('pin');
+        Route::get('/{site}/open', 'open')->name('open');
+        Route::delete('/{site}', 'destroy')->name('destroy');
+    });
+
+// "store" is called by the browser extension, so it is excluded from CSRF protection in bootstrap/app.php.
+Route::controller(SiteImportController::class)
+    ->prefix('site-imports')
+    ->name('site-imports.')
+    ->where(['import' => '[0-9]+'])
+    ->group(function (): void {
+        Route::post('/', 'store')->name('store');
+        Route::get('/{import}', 'show')->name('show');
+        Route::post('/{import}/apply', 'apply')->name('apply');
     });
 
 // The tools run entirely in the browser (resources/js/tools), so they are plain views.

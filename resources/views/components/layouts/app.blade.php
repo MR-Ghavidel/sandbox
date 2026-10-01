@@ -8,6 +8,9 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
         <title>{{ $title }}</title>
+        <link rel="icon" href="{{ asset('images/logo.svg') }}" type="image/svg+xml">
+        <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="48x48">
+        <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
 
         {{-- Apply the theme before the page paints, so a dark page never flashes white (see resources/js/theme.js). --}}
         <script>

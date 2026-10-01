@@ -12,8 +12,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Called by the Bizagi Chrome extension, which cannot send a CSRF token.
-        $middleware->validateCsrfTokens(except: ['attendance-imports']);
+        // Called by the browser extension (Bizagi attendance, browser sites), which cannot send a CSRF token.
+        $middleware->validateCsrfTokens(except: ['attendance-imports', 'site-imports']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
