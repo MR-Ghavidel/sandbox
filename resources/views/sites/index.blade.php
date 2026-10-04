@@ -44,10 +44,10 @@
         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
             @foreach ($sites as $site)
                 <article class="group relative flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 shadow-sm transition hover:border-sky-300 dark:hover:border-sky-700 hover:shadow-md">
-                    {{-- The letter shows until (or unless) the site's own icon loads over it. --}}
+                    {{-- The letter shows until (or unless) the site's logo loads over it. The logo is downloaded once and kept by the app. --}}
                     <span class="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-sky-50 dark:bg-sky-950/40 font-bold text-sky-700 dark:text-sky-300">
                         {{ $site->initial() }}
-                        <img src="https://{{ $site->host }}/favicon.ico" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()" class="absolute inset-0 m-auto size-6 bg-sky-50 dark:bg-sky-950/40">
+                        <img src="{{ route('sites.icon', ['site' => $site->id, 'v' => $site->iconCheckedAt?->timestamp]) }}" alt="" loading="lazy" onerror="this.remove()" class="absolute inset-0 m-auto size-7 object-contain bg-sky-50 dark:bg-sky-950/40">
                     </span>
 
                     <div class="min-w-0 flex-1">

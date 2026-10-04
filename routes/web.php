@@ -44,6 +44,7 @@ Route::controller(SiteController::class)
         Route::put('/{site}', 'update')->name('update');
         Route::patch('/{site}/pin', 'pin')->name('pin');
         Route::get('/{site}/open', 'open')->name('open');
+        Route::get('/{site}/icon', 'icon')->name('icon');
         Route::delete('/{site}', 'destroy')->name('destroy');
     });
 

@@ -67,7 +67,7 @@ class SiteRepository
     /**
      * Update the given columns of a site.
      *
-     * @param  array{title?: string, url?: string, host?: string, description?: ?string, is_pinned?: bool}  $attributes
+     * @param  array{title?: string, url?: string, host?: string, description?: ?string, icon_path?: ?string, icon_checked_at?: ?\DateTimeInterface, is_pinned?: bool}  $attributes
      */
     public function update(int $id, array $attributes): void
     {

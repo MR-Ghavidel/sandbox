@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Repositories\SiteRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class SiteTest extends TestCase
@@ -102,5 +104,43 @@ class SiteTest extends TestCase
 
         $this->post(route('site-imports.apply', $importId), ['hosts' => ['news.test']]);
         $this->assertDatabaseMissing('sites', ['host' => 'news.test']);
+    }
+
+    public function test_the_logo_linked_from_the_page_is_downloaded_once_and_served_from_disk(): void
+    {
+        Storage::fake('local');
+        $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=');
+        Http::preventStrayRequests()->fake([
+            'https://docs.test/guide/intro' => Http::response('<html><head><link rel="icon" href="/small.ico" sizes="16x16"><link rel="apple-touch-icon" href="../img/logo.png"></head></html>'),
+            'https://docs.test/img/logo.png' => Http::response($png, headers: ['Content-Type' => 'application/octet-stream']),
+        ]);
+        $siteId = app(SiteRepository::class)->create(['title' => 'Docs', 'url' => 'https://docs.test/guide/intro', 'host' => 'docs.test']);
+
+        $this->get(route('sites.icon', $siteId))->assertOk()->assertHeader('Content-Type', 'image/png');
+        $this->get(route('sites.icon', $siteId))->assertOk();
+
+        Http::assertSentCount(2);
+        Storage::disk('local')->assertExists("site-icons/{$siteId}.png");
+        $this->assertNotNull(DB::table('sites')->where('id', $siteId)->value('icon_checked_at'));
+    }
+
+    public function test_a_site_without_a_logo_is_not_looked_at_again_until_its_host_changes(): void
+    {
+        Storage::fake('local');
+        Http::preventStrayRequests()->fake([
+            'https://plain.test/favicon.ico' => Http::response('Not found', 404),
+            'https://plain.test*' => Http::response('<html><head><title>Plain</title></head></html>'),
+        ]);
+        $siteId = app(SiteRepository::class)->create(['title' => 'Plain', 'url' => 'https://plain.test', 'host' => 'plain.test']);
+
+        $this->get(route('sites.icon', $siteId))->assertNotFound();
+        $this->get(route('sites.icon', $siteId))->assertNotFound();
+
+        Http::assertSentCount(2);
+        $this->assertDatabaseHas('sites', ['id' => $siteId, 'icon_path' => null]);
+        $this->assertNotNull(DB::table('sites')->where('id', $siteId)->value('icon_checked_at'));
+
+        $this->put(route('sites.update', $siteId), ['url' => 'https://other.test', 'title' => 'Other']);
+        $this->assertDatabaseHas('sites', ['id' => $siteId, 'icon_checked_at' => null]);
     }
 }

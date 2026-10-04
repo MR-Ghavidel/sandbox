@@ -17,6 +17,8 @@ final readonly class SiteEntity
         public string $url,
         public string $host,
         public ?string $description,
+        public ?string $iconPath,
+        public ?CarbonImmutable $iconCheckedAt,
         public bool $isPinned,
         public int $openCount,
         public ?int $browserVisitCount,
@@ -26,7 +28,7 @@ final readonly class SiteEntity
     /**
      * Build an entity from a raw database row returned by the query builder.
      *
-     * @param  object{id: int|string, title: string, url: string, host: string, description: ?string, is_pinned: int|string|bool, open_count: int|string, browser_visit_count: int|string|null, last_opened_at: ?string}  $row
+     * @param  object{id: int|string, title: string, url: string, host: string, description: ?string, icon_path: ?string, icon_checked_at: ?string, is_pinned: int|string|bool, open_count: int|string, browser_visit_count: int|string|null, last_opened_at: ?string}  $row
      */
     public static function fromRow(object $row): self
     {
@@ -36,6 +38,8 @@ final readonly class SiteEntity
             url: $row->url,
             host: $row->host,
             description: $row->description,
+            iconPath: $row->icon_path,
+            iconCheckedAt: $row->icon_checked_at ? CarbonImmutable::parse($row->icon_checked_at) : null,
             isPinned: (bool) $row->is_pinned,
             openCount: (int) $row->open_count,
             browserVisitCount: $row->browser_visit_count === null ? null : (int) $row->browser_visit_count,
@@ -51,6 +55,14 @@ final readonly class SiteEntity
         $host = parse_url($url, PHP_URL_HOST);
 
         return is_string($host) && $host !== '' ? Str::of($host)->lower()->chopStart('www.')->toString() : null;
+    }
+
+    /**
+     * The logo is looked for once; a site without one is looked at again after a week.
+     */
+    public function needsIconCheck(): bool
+    {
+        return $this->iconCheckedAt === null || ($this->iconPath === null && $this->iconCheckedAt->lt(now()->subWeek()));
     }
 
     public function titleDirection(): string
