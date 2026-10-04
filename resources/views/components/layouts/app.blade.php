@@ -40,7 +40,8 @@
         </script>
 
         {{-- Thin loading bar shown during soft navigations (resources/js/navigation.js). --}}
-        <div data-navigation-progress class="pointer-events-none fixed inset-x-0 top-0 z-50 h-0.5 origin-right scale-x-0 bg-sky-500 opacity-0 transition-[transform,opacity] duration-300 data-[state=done]:scale-x-100 data-[state=done]:opacity-0 data-[state=loading]:scale-x-75 data-[state=loading]:opacity-100 data-[state=loading]:duration-[3s]"></div>
+        {{-- Shown while the next page loads: soft navigations, form submits and full page loads (see resources/js/navigation.js). --}}
+        <div data-navigation-progress class="pointer-events-none fixed inset-x-0 top-0 z-50 h-1 origin-right scale-x-0 bg-sky-500 opacity-0 shadow-[0_0_8px] shadow-sky-500/70 transition-[transform,opacity] duration-300 ease-out data-[state=done]:scale-x-100 data-[state=done]:opacity-0 data-[state=loading]:scale-x-90 data-[state=loading]:opacity-100 data-[state=loading]:duration-[8s]"></div>
 
         <x-layouts.drawer />
 

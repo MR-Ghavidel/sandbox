@@ -33,6 +33,8 @@ const setProgress = (state) => {
     }
 
     bar.dataset.state = state;
+    // Dims the current page a little while the next one loads (see app.css).
+    document.documentElement.toggleAttribute('data-navigating', state === 'loading');
 
     if (state === 'done') {
         setTimeout(() => {
@@ -175,5 +177,25 @@ window.addEventListener('popstate', () => {
     // Only the hash changed: nothing to load.
     if (withoutHash(url) !== withoutHash(renderedUrl)) {
         navigate(url.href, { isHistoryNavigation: true });
+    }
+});
+
+// A form that is not handled by a script leaves the page with a full load; show the progress until the
+// next page replaces this one. A form that answers with a download never leaves, so the bar gives up.
+document.addEventListener('submit', (event) => {
+    setTimeout(() => {
+        if (event.defaultPrevented || (event.target.target && event.target.target !== '_self')) {
+            return;
+        }
+
+        setProgress('loading');
+        setTimeout(() => setProgress(''), 20000);
+    });
+});
+
+// Coming back with the browser's back button can restore this page from memory, bar and all.
+window.addEventListener('pageshow', (event) => {
+    if (event.persisted) {
+        setProgress('');
     }
 });

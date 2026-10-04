@@ -43,6 +43,16 @@
     -webkit-text-security: disc;
 }
 
+/* While the next page loads (resources/js/navigation.js), the current one fades a little; quick loads stay unnoticed. */
+[data-page] {
+    transition: opacity 0.2s;
+}
+
+[data-navigating] [data-page] {
+    opacity: 0.6;
+    transition-delay: 0.15s;
+}
+
 /*
  * Collapsible sections ([data-collapsible] with a [data-collapse-body] holding one inner element):
  * the body animates between its full height and zero with a grid-rows transition.
