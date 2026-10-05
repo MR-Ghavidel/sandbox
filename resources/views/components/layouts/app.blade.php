@@ -60,8 +60,10 @@
                 </div>
             </header>
 
-            {{-- The scroll container is left-to-right only so that its scrollbar sits on the right, next to the drawer. --}}
-            <div data-scroll-container dir="ltr" class="app-scrollbar min-h-0 flex-1 overflow-y-auto">
+            {{-- The scroll container is left-to-right only so that its scrollbar sits on the right, next to the drawer.
+             overflow-x-clip keeps the app shell exactly as wide as the window: content that is wider than the screen
+             scrolls inside its own box (e.g. the attendance table), instead of stretching the whole page. --}}
+            <div data-scroll-container dir="ltr" class="app-scrollbar min-h-0 flex-1 overflow-x-clip overflow-y-auto">
                 {{-- Everything inside [data-page] is replaced on a soft navigation; the drawer and header stay. --}}
                 <div data-page dir="rtl">
                     <main tabindex="-1" class="mx-auto max-w-[1600px] px-4 py-6 focus:outline-none lg:px-6">

@@ -9,9 +9,9 @@
             <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">با مارک‌داون بنویسید؛ هر پاراگراف فارسی یا انگلیسی در جهت درست خودش نمایش داده می‌شود.</p>
         </div>
 
-        <form method="GET" action="{{ route('notes.index') }}" class="flex items-center gap-2">
-            <input type="search" name="q" value="{{ $search }}" placeholder="جستجو در یادداشت‌ها" aria-label="جستجو" class="w-64 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-sm focus:border-sky-400 dark:focus:border-sky-600 focus:outline-none">
-            <button type="submit" class="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-800">جستجو</button>
+        <form method="GET" action="{{ route('notes.index') }}" class="flex w-full items-center gap-2 sm:w-auto">
+            <input type="search" name="q" value="{{ $search }}" placeholder="جستجو در یادداشت‌ها" aria-label="جستجو" class="w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-sm focus:border-sky-400 dark:focus:border-sky-600 focus:outline-none sm:w-64">
+            <button type="submit" class="shrink-0 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-800">جستجو</button>
         </form>
     </div>
 

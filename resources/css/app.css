@@ -212,3 +212,64 @@
 [data-theme='dark'] .markdown pre code { background: none; }
 [data-theme='dark'] .markdown :is(hr, th, td) { border-color: var(--color-slate-700); }
 [data-theme='dark'] .markdown th { background: var(--color-slate-800); }
+
+/*
+ * Attendance table (کارکرد و حقوق). A 13-column table is far wider than a phone, and content wider
+ * than the screen makes the whole page wider as well: mobile browsers stretch the page to the
+ * content, which pushes the app shell to one side and leaves empty space on the other. Below sm the
+ * table therefore becomes one card per day. The header row is hidden, the row wraps its own cells,
+ * and the time inputs take the label the header used to give them (data-label). The inputs
+ * themselves are untouched, so the per-day auto-save (resources/js/payroll.js) keeps working.
+ */
+@media (width < 40rem) {
+    [data-attendance-table] thead {
+        display: none;
+    }
+
+    [data-attendance-table] .overflow-x-auto {
+        overflow: visible;
+    }
+
+    [data-attendance-table] :is(table, tbody) {
+        display: block;
+        width: 100%;
+    }
+
+    [data-attendance-table] tr {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem;
+    }
+
+    [data-attendance-table] td {
+        display: block;
+        padding: 0;
+    }
+
+    /* Day and its work-day checkbox share the first line; the total and the save state share the
+       last one; the note (a select plus a text input) always gets a full line of its own. */
+    [data-attendance-table] td[data-cell='day'] { order: 1; flex: 1 1 auto; }
+    [data-attendance-table] td[data-cell='work-day'] { order: 2; flex: 0 0 auto; }
+    [data-attendance-table] td[data-cell='time'] { order: 3; flex: 1 1 calc(50% - 0.25rem); min-width: 0; }
+    [data-attendance-table] td[data-cell='total'] { order: 4; flex: 0 1 auto; text-align: start; }
+    [data-attendance-table] td[data-cell='state'] { order: 5; flex: 0 0 auto; }
+    [data-attendance-table] td[data-cell='note'] { order: 6; flex: 1 1 100%; }
+
+    [data-attendance-table] td[data-cell='time']::before {
+        content: attr(data-label);
+        display: block;
+        margin-block-end: 0.125rem;
+        font-size: 0.625rem;
+        color: var(--color-slate-500);
+    }
+
+    [data-theme='dark'] [data-attendance-table] td[data-cell='time']::before {
+        color: var(--color-slate-400);
+    }
+
+    [data-attendance-table] td[data-cell='time'] input {
+        width: 100%;
+    }
+}

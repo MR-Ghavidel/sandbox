@@ -46,16 +46,17 @@
                             'data-[work-day=0]:bg-slate-50 dark:data-[work-day=0]:bg-slate-800/60 data-[work-day=0]:text-slate-500 dark:data-[work-day=0]:text-slate-400' => ! $day->date->isToday(),
                         ])
                     >
-                        <td class="px-3 py-1.5 whitespace-nowrap">
+                        <td class="px-3 py-1.5 whitespace-nowrap" data-cell="day">
                             <span class="font-medium">{{ JalaliDate::format($day->date, 'EEEE') }}</span>
                             <span class="text-xs text-slate-500 dark:text-slate-400">{{ JalaliDate::format($day->date, 'd MMMM') }}</span>
                         </td>
-                        <td class="px-2 py-1.5 text-center">
+                        <td class="px-2 py-1.5 text-center" data-cell="work-day">
                             <input type="checkbox" data-field="is_work_day" @checked($day->isWorkDay) class="size-4 accent-sky-600" aria-label="روز کاری">
                         </td>
                         @foreach ($day->pairs as $index => $pair)
                             @foreach (['arrive', 'leave'] as $type)
-                                <td class="px-1 py-1.5">
+                                {{-- data-label is read by the phone layout, where the table header is hidden. --}}
+                                <td class="px-1 py-1.5" data-cell="time" data-label="{{ $type === 'arrive' ? 'ورود' : 'خروج' }} {{ Number::format($index + 1, locale: 'fa') }}">
                                     <input
                                         type="text"
                                         inputmode="numeric"
@@ -71,12 +72,12 @@
                                 </td>
                             @endforeach
                         @endforeach
-                        <td class="px-2 py-1.5 text-center font-medium whitespace-nowrap">
+                        <td class="px-2 py-1.5 text-center font-medium whitespace-nowrap" data-cell="total">
                             <span data-row-total dir="ltr">{{ $day->workedMinutes() > 0 ? Duration::format($day->workedMinutes()) : '' }}</span>
                             <span data-incomplete-badge @class(['block text-xs font-normal text-amber-600 dark:text-amber-400', 'hidden' => ! $day->hasIncompletePair()]) title="یک ورود یا خروج جا افتاده">ناقص</span>
                             <span data-off-day-work-badge @class(['block text-xs font-normal text-emerald-600 dark:text-emerald-400', 'hidden' => $day->isWorkDay || $day->workedMinutes() === 0]) title="کار در روز غیرکاری کامل اضافه‌کار حساب می‌شود">اضافه‌کار</span>
                         </td>
-                        <td class="px-3 py-1.5">
+                        <td class="px-3 py-1.5" data-cell="note">
                             <div class="flex items-center gap-1">
                                 <select data-note-select aria-label="توضیح" class="w-28 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-1 py-1 text-sm focus:border-sky-400 dark:focus:border-sky-600 focus:outline-none">
                                     <option value="">—</option>
@@ -88,7 +89,7 @@
                                 <input type="text" data-note-other maxlength="255" value="{{ $isCustomNote ? $day->note : '' }}" placeholder="توضیح" aria-label="توضیح دلخواه" @class(['w-28 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-sm focus:border-sky-400 dark:focus:border-sky-600 focus:outline-none', 'hidden' => ! $isCustomNote])>
                             </div>
                         </td>
-                        <td class="px-1 py-1.5 text-center">
+                        <td class="px-1 py-1.5 text-center" data-cell="state">
                             {{-- Auto-save state: idle, saving, saved or error. --}}
                             <span data-save-state data-state="idle" class="inline-flex size-5 items-center justify-center rounded-full text-xs font-bold transition-opacity data-[state=error]:bg-red-100 dark:data-[state=error]:bg-red-900/40 data-[state=error]:text-red-600 dark:data-[state=error]:text-red-400 data-[state=idle]:opacity-0 data-[state=saved]:bg-emerald-100 dark:data-[state=saved]:bg-emerald-900/40 data-[state=saved]:text-emerald-600 dark:data-[state=saved]:text-emerald-400 data-[state=saving]:animate-pulse data-[state=saving]:text-slate-400 dark:data-[state=saving]:text-slate-500"></span>
                         </td>

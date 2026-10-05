@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Entities\AttendanceDayEntity;
 use App\Support\TimeInput;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -71,7 +72,7 @@ class UpdateAttendanceDayRequest extends FormRequest
     /**
      * The validated day as an entity.
      */
-    public function toEntity(\Carbon\CarbonImmutable $date): AttendanceDayEntity
+    public function toEntity(CarbonImmutable $date): AttendanceDayEntity
     {
         return new AttendanceDayEntity(
             id: null,
