@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
 use App\Repositories\SiteRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +16,8 @@ class SiteTest extends TestCase
 
     public function test_a_site_is_added_with_its_host_as_the_default_title_and_duplicates_are_rejected(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $this->post(route('sites.store'), ['url' => 'https://www.GitHub.com/dashboard', 'title' => ''])
             ->assertRedirect(route('sites.index'));
 
@@ -27,6 +30,8 @@ class SiteTest extends TestCase
 
     public function test_list_shows_pinned_then_most_opened_sites_and_opening_counts_the_visit(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $sites = app(SiteRepository::class);
         $sites->create(['title' => 'Rarely used', 'url' => 'https://rare.test', 'host' => 'rare.test']);
         $often = $sites->create(['title' => 'Often used', 'url' => 'https://often.test/app', 'host' => 'often.test']);
@@ -42,6 +47,8 @@ class SiteTest extends TestCase
 
     public function test_a_site_is_edited_pinned_and_deleted(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $siteId = app(SiteRepository::class)->create(['title' => 'Old', 'url' => 'https://old.test', 'host' => 'old.test']);
 
         $this->get(route('sites.edit', $siteId))->assertOk()->assertSee('https://old.test');
@@ -60,6 +67,8 @@ class SiteTest extends TestCase
 
     public function test_extension_sends_browser_sites_without_csrf_and_they_are_merged_by_host(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $response = $this->postJson(route('site-imports.store'), ['sites' => [
             ['url' => 'https://github.com/', 'title' => 'GitHub', 'visit_count' => null, 'sources' => ['top_sites']],
             ['url' => 'https://www.github.com/', 'title' => 'GitHub Home', 'visit_count' => 40, 'sources' => ['history']],
@@ -79,6 +88,8 @@ class SiteTest extends TestCase
 
     public function test_chosen_browser_sites_are_saved_and_already_saved_ones_are_skipped(): void
     {
+        $this->actingAs(User::factory()->create());
+
         app(SiteRepository::class)->create(['title' => 'My GitHub', 'url' => 'https://github.com', 'host' => 'github.com']);
 
         $previewUrl = $this->postJson(route('site-imports.store'), ['sites' => [
@@ -108,6 +119,8 @@ class SiteTest extends TestCase
 
     public function test_the_logo_linked_from_the_page_is_downloaded_once_and_served_from_disk(): void
     {
+        $this->actingAs(User::factory()->create());
+
         Storage::fake('local');
         $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=');
         Http::preventStrayRequests()->fake([
@@ -126,6 +139,8 @@ class SiteTest extends TestCase
 
     public function test_a_site_without_a_logo_is_not_looked_at_again_until_its_host_changes(): void
     {
+        $this->actingAs(User::factory()->create());
+
         Storage::fake('local');
         Http::preventStrayRequests()->fake([
             'https://plain.test/favicon.ico' => Http::response('Not found', 404),

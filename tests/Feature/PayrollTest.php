@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Entities\PayrollMonthEntity;
+use App\Models\User;
 use App\Repositories\AttendanceDayRepository;
 use App\Repositories\PayrollMonthRepository;
 use App\Support\PayrollCalculator;
@@ -26,11 +27,15 @@ class PayrollTest extends TestCase
 
     public function test_index_redirects_to_the_current_period(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $this->get(route('payroll.index'))->assertRedirect(route('payroll.show', ['year' => 1405, 'month' => 7]));
     }
 
     public function test_period_page_lists_every_day_and_is_in_the_drawer_menu(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $this->get(route('payroll.show', ['year' => 1405, 'month' => 5]))
             ->assertOk()
             ->assertSee('کارکرد مرداد ۱۴۰۵')
@@ -44,11 +49,15 @@ class PayrollTest extends TestCase
 
     public function test_invalid_month_is_not_found(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $this->get('/payroll/1405/13')->assertNotFound();
     }
 
     public function test_settings_are_saved_and_copied_to_the_next_month_as_defaults(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $this->put(route('payroll.settings.update', ['year' => 1405, 'month' => 5]), [
             'salary' => '۱۳٬۴۹۰٬۰۰۰',
             'daily_work_time' => '8:00',
@@ -74,6 +83,8 @@ class PayrollTest extends TestCase
 
     public function test_invalid_settings_are_rejected(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $this->put(route('payroll.settings.update', ['year' => 1405, 'month' => 5]), [
             'salary' => 'abc',
             'daily_work_time' => '25:00',
@@ -84,6 +95,8 @@ class PayrollTest extends TestCase
 
     public function test_a_day_is_auto_saved_with_normalized_times_and_returns_the_updated_summary(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $response = $this->putJson($this->dayUrl(1405, 5, '2026-07-18'), [
             'is_work_day' => true,
             'note' => '',
@@ -109,6 +122,8 @@ class PayrollTest extends TestCase
 
     public function test_work_on_an_official_holiday_is_counted_as_overtime(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $this->putJson($this->dayUrl(1405, 5, '2026-08-04'), [
             'is_work_day' => false,
             'note' => 'تعطیل رسمی',
@@ -131,6 +146,8 @@ class PayrollTest extends TestCase
 
     public function test_auto_save_rejects_invalid_times_and_days_outside_the_period(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $this->putJson($this->dayUrl(1405, 5, '2026-07-18'), ['is_work_day' => true, 'arrive' => [1 => '8:61'], 'leave' => [1 => 'ab']])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['arrive.1', 'leave.1']);
@@ -142,6 +159,8 @@ class PayrollTest extends TestCase
 
     public function test_second_half_of_the_year_closes_on_the_25th(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $this->get(route('payroll.show', ['year' => 1405, 'month' => 8]))
             ->assertOk()
             ->assertSee('۲۶ مهر')
@@ -152,6 +171,8 @@ class PayrollTest extends TestCase
 
     public function test_amount_settings_are_shown_with_thousands_separators(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $this->put(route('payroll.settings.update', ['year' => 1405, 'month' => 5]), [
             'salary' => '13490000', 'daily_work_time' => '8:00', 'salary_divisor_days' => '26', 'overtime_multiplier' => '1.4',
             'insurance_rate_percent' => '7', 'tax_rate_percent' => '10', 'tax_exemption' => '12000000', 'advance' => '0',
@@ -165,6 +186,8 @@ class PayrollTest extends TestCase
 
     public function test_month_picker_knows_the_viewed_and_current_months_and_months_with_data(): void
     {
+        $this->actingAs(User::factory()->create());
+
         app(PayrollMonthRepository::class)->save(PayrollMonthEntity::defaultsFor(1404, 11));
         $this->putJson($this->dayUrl(1405, 5, '2026-07-18'), ['is_work_day' => true, 'arrive' => [1 => '08:00'], 'leave' => [1 => '16:00']])->assertOk();
 
@@ -180,6 +203,8 @@ class PayrollTest extends TestCase
 
     public function test_salary_amounts_are_marked_for_privacy_mode(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $this->get(route('payroll.show', ['year' => 1405, 'month' => 5]))
             ->assertOk()
             ->assertSee('data-privacy-toggle', false)

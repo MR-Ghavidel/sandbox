@@ -115,11 +115,16 @@ const sendToApp = async ({ button, path, permissions = [], buildBody }) => {
 
         const response = await fetch(`${appUrl}${path}`, {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
             body: JSON.stringify(await buildBody(appUrl)),
         });
 
         if (!response.ok) {
+            if (response.status === 401) {
+                throw new Error('ابتدا در سامانه وارد حساب خود شوید و دوباره ارسال کنید');
+            }
+
             const body = await response.json().catch(() => ({}));
             throw new Error(body.message ?? `HTTP ${response.status}`);
         }

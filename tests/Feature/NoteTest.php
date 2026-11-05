@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
 use App\Repositories\NoteRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -21,6 +22,8 @@ class NoteTest extends TestCase
 
     public function test_a_note_is_created_and_shown_as_markdown_with_per_paragraph_direction(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $response = $this->post(route('notes.store'), [
             'title' => 'Docker نکته‌های',
             'body' => "Laravel را با Docker بالا آوردم.\n\n- مورد **مهم**",
@@ -39,6 +42,8 @@ class NoteTest extends TestCase
 
     public function test_list_shows_pinned_notes_first_and_searches_title_and_body(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $notes = app(NoteRepository::class);
         $notes->create('Old pinned', 'body', isPinned: true);
         Carbon::setTestNow('2026-09-29 11:00:00');
@@ -57,6 +62,8 @@ class NoteTest extends TestCase
 
     public function test_a_note_is_updated_pinned_and_deleted(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $noteId = app(NoteRepository::class)->create('Title', 'Body');
 
         $this->put(route('notes.update', $noteId), ['title' => 'عنوان تازه', 'body' => 'متن تازه', 'is_pinned' => '1'])
@@ -72,6 +79,8 @@ class NoteTest extends TestCase
 
     public function test_title_is_required_and_the_editor_pages_render(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $this->post(route('notes.store'), ['title' => '', 'body' => 'x'])->assertSessionHasErrors('title');
 
         $noteId = app(NoteRepository::class)->create('Title', "# Heading\n\nمتن");
@@ -83,6 +92,8 @@ class NoteTest extends TestCase
 
     public function test_preview_renders_markdown_like_a_saved_note(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $this->postJson(route('notes.preview'), ['body' => 'سلام **Laravel**'])
             ->assertOk()
             ->assertExactJson(['html' => "<p dir=\"rtl\">سلام <strong>Laravel</strong></p>\n"]);

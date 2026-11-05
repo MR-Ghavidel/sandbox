@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Entities\TaskEntity;
+use App\Models\User;
 use App\Repositories\TaskRepository;
 use App\TaskStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -24,6 +25,8 @@ class TaskManagementTest extends TestCase
 
     public function test_board_shows_only_tasks_of_the_saturday_to_friday_week_in_order(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $this->createTask(['title' => 'Friday task', 'due_date' => '2026-09-25']);
         $this->createTask(['title' => 'Second on saturday', 'due_date' => '2026-09-19', 'position' => 2]);
         $this->createTask(['title' => 'First on saturday', 'due_date' => '2026-09-19', 'position' => 1]);
@@ -40,6 +43,8 @@ class TaskManagementTest extends TestCase
 
     public function test_page_uses_the_main_layout_with_the_drawer_menu(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $this->get(route('tasks.index'))
             ->assertOk()
             ->assertSee('dir="rtl"', false)
@@ -50,6 +55,8 @@ class TaskManagementTest extends TestCase
 
     public function test_today_summary_shows_todays_tasks_even_when_viewing_another_week(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $this->createTask(['title' => 'Due today', 'due_date' => '2026-09-23', 'status' => 'completed']);
         $this->createTask(['title' => 'Also today', 'due_date' => '2026-09-23']);
 
@@ -61,6 +68,8 @@ class TaskManagementTest extends TestCase
 
     public function test_board_can_show_another_week(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $this->createTask(['title' => 'Next saturday', 'due_date' => '2026-09-26']);
 
         $this->get(route('tasks.index', ['week' => '2026-09-29']))
@@ -70,6 +79,8 @@ class TaskManagementTest extends TestCase
 
     public function test_task_is_added_to_the_end_of_its_day(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $this->createTask(['due_date' => '2026-09-21', 'position' => 3]);
 
         $this->post(route('tasks.store'), ['title' => 'New task', 'due_date' => '2026-09-21'])
@@ -82,6 +93,8 @@ class TaskManagementTest extends TestCase
 
     public function test_task_can_be_created_with_a_description(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $this->post(route('tasks.store'), ['title' => 'With notes', 'description' => "Line one\nLine two", 'due_date' => '2026-09-21'])
             ->assertRedirect();
 
@@ -91,6 +104,8 @@ class TaskManagementTest extends TestCase
 
     public function test_board_includes_task_details_for_the_details_dialog(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $this->createTask(['title' => 'Detailed', 'description' => 'Full details here', 'status' => 'in_progress', 'due_date' => '2026-09-19']);
 
         $this->get(route('tasks.index'))
@@ -103,6 +118,8 @@ class TaskManagementTest extends TestCase
 
     public function test_task_requires_a_title_and_valid_date(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $this->post(route('tasks.store'), ['title' => '', 'due_date' => 'tomorrow'])
             ->assertSessionHasErrors(['title', 'due_date']);
 
@@ -111,6 +128,8 @@ class TaskManagementTest extends TestCase
 
     public function test_status_can_be_changed_via_json(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $taskId = $this->createTask();
 
         $this->patchJson(route('tasks.update', $taskId), ['status' => 'completed'])
@@ -122,6 +141,8 @@ class TaskManagementTest extends TestCase
 
     public function test_invalid_status_is_rejected(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $taskId = $this->createTask();
 
         $this->patchJson(route('tasks.update', $taskId), ['status' => 'archived'])
@@ -131,6 +152,8 @@ class TaskManagementTest extends TestCase
 
     public function test_task_title_and_description_can_be_edited(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $taskId = $this->createTask();
 
         $this->patch(route('tasks.update', $taskId), ['title' => 'Renamed', 'description' => 'Notes', 'status' => 'in_progress'])
@@ -144,12 +167,16 @@ class TaskManagementTest extends TestCase
 
     public function test_updating_or_deleting_a_missing_task_returns_not_found(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $this->patchJson(route('tasks.update', 999), ['status' => 'completed'])->assertNotFound();
         $this->delete(route('tasks.destroy', 999))->assertNotFound();
     }
 
     public function test_task_can_be_deleted(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $taskId = $this->createTask();
 
         $this->delete(route('tasks.destroy', $taskId))->assertRedirect();
@@ -159,6 +186,8 @@ class TaskManagementTest extends TestCase
 
     public function test_tasks_can_be_reordered_and_moved_between_days(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $first = $this->createTask(['due_date' => '2026-09-19', 'position' => 1]);
         $second = $this->createTask(['due_date' => '2026-09-19', 'position' => 2]);
         $third = $this->createTask(['due_date' => '2026-09-19', 'position' => 3]);
@@ -178,6 +207,8 @@ class TaskManagementTest extends TestCase
 
     public function test_reorder_accepts_an_emptied_day_and_rejects_unknown_tasks(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $taskId = $this->createTask(['due_date' => '2026-09-19']);
 
         $this->patchJson(route('tasks.order'), [
@@ -196,6 +227,8 @@ class TaskManagementTest extends TestCase
 
     public function test_unfinished_past_tasks_are_carried_over_to_the_end_of_today(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $this->createTask(['due_date' => '2026-09-23', 'position' => 1]);
         $unfinished = $this->createTask(['due_date' => '2026-09-20', 'status' => 'in_progress']);
         $completed = $this->createTask(['due_date' => '2026-09-20', 'status' => 'completed']);

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Entities\PayrollMonthEntity;
+use App\Models\User;
 use App\Repositories\AttendanceDayRepository;
 use App\Repositories\PayrollMonthRepository;
 use App\Support\ExcelAttendanceReader;
@@ -66,6 +67,8 @@ class ExcelAttendanceImportTest extends TestCase
 
     public function test_uploaded_sheets_are_previewed_then_applied_without_overwriting_saved_month_settings(): void
     {
+        $this->actingAs(User::factory()->create());
+
         // Khordad already has saved settings; Tir has none.
         app(PayrollMonthRepository::class)->save(new PayrollMonthEntity(null, 1405, 3, 20_000_000, 480, 26, 1.4, 7, 10, 12_000_000, 0));
         $khordad = $this->buildAttendanceSheet(1405, 3, 13_490_000, '7:00', [['20/3/1405', [['08:00', '15:00']], 'Yes']]);
@@ -103,6 +106,8 @@ class ExcelAttendanceImportTest extends TestCase
 
     public function test_upload_rejects_files_that_are_not_valid_sheets(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $this->post(route('attendance-imports.excel'), [
             'files' => [UploadedFile::fake()->create('notes.txt', 1)],
         ])->assertSessionHasErrors('files.0');

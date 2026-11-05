@@ -56,7 +56,17 @@
                 <div class="ms-auto flex items-center gap-2">
                     <div data-page-actions class="flex items-center gap-2">{{ $actions ?? '' }}</div>
                     <x-theme-toggle />
-                    <x-privacy-toggle />
+                    <div data-auth-actions class="flex items-center gap-2">
+                        @auth
+                            <x-privacy-toggle />
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <button type="submit" class="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">خروج</button>
+                            </form>
+                        @else
+                            <a href="{{ route('login') }}" class="rounded-lg bg-sky-600 px-3 py-2 text-sm font-medium text-white hover:bg-sky-700">ورود</a>
+                        @endauth
+                    </div>
                 </div>
             </header>
 

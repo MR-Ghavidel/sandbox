@@ -3,7 +3,7 @@
 
 <aside class="fixed inset-y-0 right-0 z-40 flex w-64 translate-x-full flex-col border-s border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 transition-transform duration-200 group-data-[drawer=open]/body:translate-x-0">
     <div class="flex h-14 items-center justify-between border-b border-slate-200 dark:border-slate-700 px-4">
-        <a href="{{ route('home') }}" class="flex items-center gap-2 text-lg font-bold">
+        <a href="{{ route(auth()->check() ? 'home' : 'tools.index') }}" class="flex items-center gap-2 text-lg font-bold">
             <img src="{{ asset('images/logo.svg') }}" alt="" class="size-7">
             {{ config('app.name') }}
         </a>
@@ -15,6 +15,7 @@
     {{-- Replaced on every soft navigation, so the active item follows the page. --}}
     <nav data-drawer-nav class="flex-1 space-y-1 overflow-y-auto p-3">
         @foreach (config('navigation.items') as $item)
+            @continue(auth()->guest() && ! ($item['public'] ?? false))
             @php
                 $isActive = request()->routeIs(...(array) $item['active']);
                 $children = isset($item['children']) ? config($item['children'], []) : [];
@@ -32,16 +33,18 @@
                     {{ $item['label'] }}
                 </a>
             @else
-                {{-- Item with a collapsible list of sub-items; opened automatically while one of them is active. --}}
-                <div data-collapsible="nav-{{ $item['route'] }}" data-collapsed-by-default @if ($hasActiveChild) data-collapse-force-open @else data-collapsed @endif class="group/collapsible">
+                {{-- Guests always see the tools; signed-in users can collapse submenus. --}}
+                <div @auth data-collapsible="nav-{{ $item['route'] }}" data-collapsed-by-default @if ($hasActiveChild) data-collapse-force-open @else data-collapsed @endif @endauth class="group/collapsible">
                     <div class="flex items-center gap-1">
                         <a href="{{ route($item['route']) }}" @class([...$linkClasses, 'flex-1']) @if (request()->routeIs($item['route'])) aria-current="page" @endif>
                             <svg class="size-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $item['icon'] }}" /></svg>
                             {{ $item['label'] }}
                         </a>
-                        <button type="button" data-collapse-toggle aria-expanded="true" aria-label="نمایش زیرمجموعه‌های {{ $item['label'] }}" class="rounded-lg p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-100">
-                            <svg class="size-4 transition-transform duration-200 group-data-[collapsed]/collapsible:rotate-90" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
-                        </button>
+                        @auth
+                            <button type="button" data-collapse-toggle aria-expanded="true" aria-label="نمایش زیرمجموعه‌های {{ $item['label'] }}" class="rounded-lg p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-100">
+                                <svg class="size-4 transition-transform duration-200 group-data-[collapsed]/collapsible:rotate-90" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+                            </button>
+                        @endauth
                     </div>
 
                     <div data-collapse-body>

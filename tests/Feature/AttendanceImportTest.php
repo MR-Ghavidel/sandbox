@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Entities\AttendanceDayEntity;
+use App\Models\User;
 use App\Repositories\AttendanceDayRepository;
 use App\Repositories\AttendanceImportRepository;
 use App\Support\AttendanceImporter;
@@ -25,6 +26,8 @@ class AttendanceImportTest extends TestCase
 
     public function test_extension_payload_is_stored_and_a_preview_url_is_returned_without_csrf(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $response = $this->postJson(route('attendance-imports.store'), $this->bizagiPayload())
             ->assertCreated()
             ->assertJsonStructure(['preview_url']);
@@ -41,6 +44,8 @@ class AttendanceImportTest extends TestCase
 
     public function test_invalid_payload_is_rejected_with_json_errors(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $this->postJson(route('attendance-imports.store'), ['source' => 'bizagi', 'days' => [['date' => 'yesterday', 'pairs' => []]]])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('days.0.date');
@@ -48,6 +53,8 @@ class AttendanceImportTest extends TestCase
 
     public function test_preview_shows_changes_and_apply_merges_them_keeping_manual_choices(): void
     {
+        $this->actingAs(User::factory()->create());
+
         // A manually marked leave day that Bizagi reports without times must stay as it is.
         app(AttendanceDayRepository::class)->saveMany([
             new AttendanceDayEntity(null, CarbonImmutable::parse('2026-09-13'), false, 'مرخصی', array_fill(0, 4, ['arrive' => null, 'leave' => null])),
@@ -101,6 +108,8 @@ class AttendanceImportTest extends TestCase
 
     public function test_paid_hourly_leave_counts_as_worked_time_and_unpaid_leave_only_adds_a_note(): void
     {
+        $this->actingAs(User::factory()->create());
+
         // Taken from a real Bizagi grid: the leave sits in pair 1, the work before it in pair 2.
         $previewUrl = $this->postJson(route('attendance-imports.store'), [
             'source' => 'bizagi',

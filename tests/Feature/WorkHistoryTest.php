@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Entities\AttendanceDayEntity;
 use App\Entities\PayrollMonthEntity;
+use App\Models\User;
 use App\Repositories\AttendanceDayRepository;
 use App\Repositories\PayrollMonthRepository;
 use App\Support\WorkHistory;
@@ -25,6 +26,8 @@ class WorkHistoryTest extends TestCase
 
     public function test_summary_is_empty_without_recorded_days_and_the_home_page_explains_it(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $this->assertNull(app(WorkHistory::class)->summarize(today()));
 
         $this->get(route('home'))->assertOk()->assertSee('کارنامه کاری‌ات');
@@ -32,6 +35,8 @@ class WorkHistoryTest extends TestCase
 
     public function test_summary_counts_tenure_hours_extremes_and_money_of_finished_months(): void
     {
+        $this->actingAs(User::factory()->create());
+
         // Mordad 1405 (27 Tir – 26 Mordad) is finished and has saved settings: salary 2,600,000, 8 hours a day.
         app(PayrollMonthRepository::class)->save(new PayrollMonthEntity(null, 1405, 5, 2_600_000, 480, 26, 1.4, 7, 10, 12_000_000, 0));
 

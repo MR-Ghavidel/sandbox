@@ -70,7 +70,7 @@ const replaceContent = (newDocument) => {
     const newPage = newDocument.querySelector('[data-page]');
     document.querySelector('[data-page]').replaceWith(newPage);
 
-    for (const selector of ['[data-page-title]', '[data-page-actions]']) {
+    for (const selector of ['[data-page-title]', '[data-page-actions]', '[data-auth-actions]']) {
         const current = document.querySelector(selector);
         const replacement = newDocument.querySelector(selector);
 

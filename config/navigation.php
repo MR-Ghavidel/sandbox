@@ -49,6 +49,7 @@ return [
         [
             'label' => 'ابزارها',
             'route' => 'tools.index',
+            'public' => true,
             'active' => 'tools.*',
             // Sub-items shown under the item (a config key, so new tools appear automatically).
             'children' => 'tools.items',

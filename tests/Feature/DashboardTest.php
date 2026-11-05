@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
 use App\TaskStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -22,6 +23,8 @@ class DashboardTest extends TestCase
 
     public function test_home_page_shows_the_dashboard_inside_the_main_layout(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $this->get(route('home'))
             ->assertOk()
             ->assertSee('dir="rtl"', false)
@@ -32,6 +35,8 @@ class DashboardTest extends TestCase
 
     public function test_dashboard_shows_todays_tasks_and_week_progress(): void
     {
+        $this->actingAs(User::factory()->create());
+
         $this->createTask('Done today', '2026-09-23', TaskStatus::Completed);
         $this->createTask('Pending today', '2026-09-23', TaskStatus::InProgress);
         $this->createTask('Earlier this week', '2026-09-19', TaskStatus::Completed);
