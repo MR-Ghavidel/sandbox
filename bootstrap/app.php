@@ -14,8 +14,16 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->redirectGuestsTo(fn (Request $request): string => route($request->routeIs('home') ? 'tools.index' : 'login'));
 
-        // Called by the browser extension (Bizagi attendance, browser sites), which cannot send a CSRF token.
-        $middleware->validateCsrfTokens(except: ['attendance-imports', 'site-imports']);
+        // Called by the browser extension (Bizagi attendance, browser sites) and by Bale,
+        // which cannot send a CSRF token. The deploy runner authenticates with its own token.
+        $middleware->validateCsrfTokens(except: [
+            'attendance-imports',
+            'site-imports',
+            'bale/webhook',
+            'bale/webhook/*',
+            'deploy/artisan',
+            'deploy/artisan/*',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

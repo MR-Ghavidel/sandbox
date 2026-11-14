@@ -8,6 +8,7 @@ import './tasks';
 import './forms';
 import './notes';
 import './payroll';
+import './schedule';
 import './month-picker';
 import './tools/clipboard';
 import './tools/json-formatter';
