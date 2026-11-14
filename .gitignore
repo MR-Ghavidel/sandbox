@@ -18,7 +18,8 @@
 /public/fonts-manifest.dev.json
 /public/hot
 /public/storage
-/cpanel-public-build.zip
+/*.zip
+/public/*.zip
 /storage/*.key
 /storage/pail
 /vendor

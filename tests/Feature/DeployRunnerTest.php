@@ -33,10 +33,10 @@ class DeployRunnerTest extends TestCase
     {
         config(['deploy.token' => 'super-secret']);
 
-        $this->getJson('/deploy/artisan/about', ['X-Deploy-Token' => 'super-secret'])
+        $this->getJson('/deploy/artisan/version', ['X-Deploy-Token' => 'super-secret'])
             ->assertOk()
             ->assertJsonPath('ok', true)
-            ->assertJsonPath('command', 'about');
+            ->assertJsonPath('command', 'version');
     }
 
     public function test_the_token_can_come_from_the_query_string(): void

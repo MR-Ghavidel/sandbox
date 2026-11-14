@@ -62,7 +62,7 @@ https://your-domain.com/deploy/artisan/{command}?token=DEPLOY_RUNNER_TOKEN
 3. `.../deploy/artisan/optimize-clear?token=...`
 4. `.../deploy/artisan/optimize?token=...`
 
-دستورهای مجاز: `migrate`، `migrate-status`، `optimize`، `optimize-clear`، `config-cache`، `config-clear`، `route-cache`، `route-clear`، `view-cache`، `view-clear`، `cache-clear`، `storage-link`، `about`.
+دستورهای مجاز: `migrate`، `migrate-status`، `optimize`، `optimize-clear`، `config-cache`، `config-clear`، `route-cache`، `route-clear`، `view-cache`، `view-clear`، `cache-clear`، `storage-link`، `schedule-list`، `version`.
 
 نکته‌ها:
 - اگر `DEPLOY_RUNNER_TOKEN` را عوض کردی و قبلاً `config-cache` زده بودی، با توکن **قدیمی** یک‌بار `config-clear` بزن (یا فایل `bootstrap/cache/config.php` را از File Manager حذف کن).
@@ -103,3 +103,6 @@ https://tapi.bale.ai/bot<BALE_BOT_TOKEN>/setWebhook?url=https://your-domain.com/
 - خطای `No application encryption key` → `APP_KEY` خالی است
 - خطای 419 روی روت دیپلوی → `bootstrap/app.php` جدید آپلود نشده (این روت از CSRF مستثنی است)
 - تغییرات فرانت دیده نمی‌شود → مطمئن شو `public/build` جدید آپلود شده و `view-clear`/`optimize-clear` زده‌ای
+- خطای `The Process class relies on proc_open` → فقط دستور `about` به آن نیاز دارد؛ از `version` استفاده کن
+- خطای `Table ... already exists` در مایگریشن → یک اجرای قبلی نیمه‌کاره مانده؛ با `migrate-status` جدول‌های Pending را ببین، جدول‌های باقی‌مانده را از phpMyAdmin حذف کن و دوباره `migrate` بزن
+- ربات بله جواب نمی‌دهد → آدرس وبهوک باید دقیقاً شامل سکرت باشد: `https://your-domain.com/bale/webhook/BALE_WEBHOOK_SECRET`

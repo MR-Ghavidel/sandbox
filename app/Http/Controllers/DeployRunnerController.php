@@ -28,7 +28,7 @@ class DeployRunnerController extends Controller
         'view-clear' => ['view:clear', []],
         'cache-clear' => ['cache:clear', []],
         'storage-link' => ['storage:link', []],
-        'about' => ['about', []],
+        'schedule-list' => ['schedule:list', []],
     ];
 
     public function __invoke(Request $request, string $command): JsonResponse
@@ -39,6 +39,17 @@ class DeployRunnerController extends Controller
         abort_if($token === '', 404);
 
         abort_unless(hash_equals($token, $this->providedToken($request)), 403);
+
+        // Reported without Artisan so hosts that disable proc_open can still check PHP.
+        if ($command === 'version') {
+            return response()->json([
+                'ok' => true,
+                'command' => 'version',
+                'exit_code' => 0,
+                'output' => 'PHP '.PHP_VERSION.' / Laravel '.app()->version(),
+                'error' => null,
+            ]);
+        }
 
         $definition = self::COMMANDS[$command] ?? null;
 
