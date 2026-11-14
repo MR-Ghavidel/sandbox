@@ -93,6 +93,29 @@ class BaleBotTest extends TestCase
         Http::assertSent(fn (Request $request): bool => str_contains((string) ($request->data()['text'] ?? ''), 'گروه درس')
             && str_contains((string) ($request->data()['text'] ?? ''), 'https://bale.ai/group/math')
             && str_contains((string) ($request->data()['text'] ?? ''), 'دکتر احمدی'));
+
+        Http::assertSent(fn (Request $request): bool => str_contains($request->url(), 'editMessageText')
+            && ($request->data()['chat_id'] ?? null) === (string) self::CHAT_ID
+            && ($request->data()['message_id'] ?? null) === 123456);
+    }
+
+    public function test_the_main_menu_uses_inline_buttons_and_callback_click_edits_its_message(): void
+    {
+        $user = $this->linkedUser();
+        Course::create(['user_id' => $user->id, 'name' => 'ریاضی', 'color' => 'sky']);
+
+        $this->sendMessage('/start')->assertOk();
+
+        Http::assertSent(fn (Request $request): bool => str_contains($request->url(), 'sendMessage')
+            && ($request->data()['reply_markup']['remove_keyboard'] ?? false) === true);
+        Http::assertSent(fn (Request $request): bool => str_contains($request->url(), 'sendMessage')
+            && str_contains(json_encode($request->data()['reply_markup'] ?? []), 'menu:help'));
+
+        $this->sendCallback('menu:courses')->assertOk();
+
+        Http::assertSent(fn (Request $request): bool => str_contains($request->url(), 'editMessageText')
+            && ($request->data()['message_id'] ?? null) === 123456
+            && str_contains((string) ($request->data()['text'] ?? ''), 'درس‌های شما'));
     }
 
     public function test_alarms_are_created_and_deleted_from_the_bot(): void
@@ -172,7 +195,7 @@ class BaleBotTest extends TestCase
                 'id' => 'callback-'.random_int(1, 100000),
                 'data' => $data,
                 'message' => [
-                    'message_id' => random_int(1, 100000),
+                    'message_id' => 123456,
                     'chat' => ['id' => self::CHAT_ID],
                 ],
             ],

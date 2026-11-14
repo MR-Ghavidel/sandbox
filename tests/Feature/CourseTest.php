@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Alarm;
+use App\Models\Assignment;
 use App\Models\Course;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -61,6 +62,8 @@ class CourseTest extends TestCase
             ->assertSee('گروه درس')
             ->assertSee('فقط هفته‌های فرد')
             ->assertSee('شنبه');
+
+        $this->get(route('courses.index'))->assertOk();
     }
 
     public function test_links_and_sessions_can_be_edited_and_deleted_through_the_course(): void
@@ -122,18 +125,37 @@ class CourseTest extends TestCase
         $user = User::factory()->create();
         $course = Course::create(['user_id' => $user->id, 'name' => 'حذف‌شدنی', 'color' => 'sky']);
         $session = $course->sessions()->create(['day_of_week' => 0, 'starts_at' => '08:00', 'meets_odd_weeks' => true, 'meets_even_weeks' => true]);
+        $assignment = Assignment::create([
+            'user_id' => $user->id,
+            'course_id' => $course->id,
+            'title' => 'تکلیف وابسته',
+            'due_at' => now()->addDay(),
+            'is_done' => false,
+        ]);
         Alarm::create([
             'user_id' => $user->id,
             'alarmable_type' => $session->getMorphClass(),
             'alarmable_id' => $session->id,
             'minutes_before' => 30,
         ]);
+        Alarm::create([
+            'user_id' => $user->id,
+            'alarmable_type' => $assignment->getMorphClass(),
+            'alarmable_id' => $assignment->id,
+            'minutes_before' => 60,
+        ]);
 
         $this->actingAs($user)->delete(route('courses.destroy', $course->id))->assertRedirect(route('courses.index'));
 
         $this->assertDatabaseCount('courses', 0);
         $this->assertDatabaseCount('class_sessions', 0);
-        $this->assertDatabaseCount('alarms', 0);
+        $this->assertDatabaseHas('assignments', ['id' => $assignment->id, 'course_id' => null]);
+        $this->assertDatabaseCount('alarms', 1);
+        $this->assertDatabaseHas('alarms', [
+            'alarmable_type' => $assignment->getMorphClass(),
+            'alarmable_id' => $assignment->id,
+            'minutes_before' => 60,
+        ]);
     }
 
     public function test_a_course_belongs_only_to_its_owner(): void

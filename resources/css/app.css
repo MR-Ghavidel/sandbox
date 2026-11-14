@@ -53,6 +53,39 @@
     transition-delay: 0.15s;
 }
 
+[data-schedule-course-title][data-overflowing='true'] > [data-schedule-course-title-text] {
+    animation: schedule-course-title-marquee var(--schedule-course-title-duration, 12s) ease-in-out infinite alternate;
+}
+
+[data-schedule-course-title]:is(:hover, :focus-within)[data-overflowing='true'] > [data-schedule-course-title-text] {
+    animation-play-state: paused;
+}
+
+@keyframes schedule-course-title-marquee {
+    0%, 14% {
+        transform: translateX(0);
+    }
+
+    86%, 100% {
+        transform: translateX(var(--schedule-course-title-shift));
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    [data-schedule-course-title] {
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    [data-schedule-course-title]::-webkit-scrollbar {
+        display: none;
+    }
+
+    [data-schedule-course-title][data-overflowing='true'] > [data-schedule-course-title-text] {
+        animation: none;
+    }
+}
+
 /*
  * Collapsible sections ([data-collapsible] with a [data-collapse-body] holding one inner element):
  * the body animates between its full height and zero with a grid-rows transition.

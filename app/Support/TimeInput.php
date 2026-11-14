@@ -34,4 +34,14 @@ class TimeInput
             '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4', '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
         ]);
     }
+
+    /**
+     * Replace Latin digits with Persian digits for display.
+     */
+    public static function persianDigits(string $value): string
+    {
+        return strtr($value, [
+            '0' => '۰', '1' => '۱', '2' => '۲', '3' => '۳', '4' => '۴', '5' => '۵', '6' => '۶', '7' => '۷', '8' => '۸', '9' => '۹',
+        ]);
+    }
 }

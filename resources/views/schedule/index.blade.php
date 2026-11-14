@@ -94,10 +94,12 @@
                         <a href="{{ route('courses.show', $session->course_id) }}"
                             class="group block rounded-lg border border-slate-200 bg-slate-50 p-2.5 transition hover:border-sky-300 hover:bg-white hover:shadow-md dark:border-slate-700 dark:bg-slate-800/70 dark:hover:border-sky-700 dark:hover:bg-slate-800"
                             style="border-inline-start: 4px solid {{ $session->course->colorHex() }}">
-                            <div class="truncate text-sm font-bold">{{ $session->course->name }}</div>
-                            <div class="mt-1 flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400" dir="ltr">
+                            <div data-schedule-course-title dir="rtl" title="{{ $session->course->name }}" class="min-w-0 overflow-hidden whitespace-nowrap text-right text-sm font-bold">
+                                <span data-schedule-course-title-text class="inline-block w-max whitespace-nowrap">{{ $session->course->name }}</span>
+                            </div>
+                            <div class="mt-1 flex items-center justify-start gap-1 text-right text-xs text-slate-500 dark:text-slate-400" dir="rtl">
                                 <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
-                                {{ $session->timeRange() }}
+                                <span dir="ltr" class="text-end">{{ \App\Support\TimeInput::persianDigits($session->timeRange()) }}</span>
                             </div>
                             @if (filled($session->course->location))
                                 <div class="mt-1 truncate text-[11px] text-slate-400">📍 {{ $session->course->location }}</div>

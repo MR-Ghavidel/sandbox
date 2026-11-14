@@ -25,6 +25,10 @@ use Illuminate\Support\Str;
  */
 class BaleBot
 {
+    private ?string $callbackChatId = null;
+
+    private ?int $callbackMessageId = null;
+
     /**
      * @var list<string>
      */
@@ -141,7 +145,9 @@ class BaleBot
             return;
         }
 
-        $this->send($chatId, 'سلام '.e($subscriber->user->name)." 👋\nبه ربات برنامه دانشگاه خوش آمدید.\n\n".$this->helpText(), $this->mainKeyboard());
+        $this->send($chatId, 'سلام '.e($subscriber->user->name)." 👋\nبه ربات برنامه دانشگاه خوش آمدید.\n\n".$this->helpText(), [
+            'remove_keyboard' => true,
+        ]);
         $this->showSchedule($subscriber);
     }
 
@@ -177,7 +183,9 @@ class BaleBot
 
         $code->delete();
 
-        $this->send($chatId, "✅ حساب شما با موفقیت به ربات وصل شد.\n\n".$this->helpText(), $this->mainKeyboard());
+        $this->send($chatId, "✅ حساب شما با موفقیت به ربات وصل شد.\n\n".$this->helpText(), [
+            'remove_keyboard' => true,
+        ]);
         $this->showSchedule($subscriber->load('user'));
     }
 
@@ -214,38 +222,47 @@ class BaleBot
         $this->bale->answerCallbackQuery((string) ($query['id'] ?? ''));
 
         $chatId = (string) ($query['message']['chat']['id'] ?? '');
+        $messageId = $query['message']['message_id'] ?? null;
+        $this->callbackChatId = $chatId;
+        $this->callbackMessageId = is_numeric($messageId) ? (int) $messageId : null;
         $data = (string) ($query['data'] ?? '');
-        $subscriber = BaleSubscriber::with('user')->where('chat_id', $chatId)->first();
 
-        if ($subscriber === null) {
-            $this->send($chatId, 'ابتدا حساب خود را با کد اتصال وصل کنید.');
+        try {
+            $subscriber = BaleSubscriber::with('user')->where('chat_id', $chatId)->first();
 
-            return;
+            if ($subscriber === null) {
+                $this->send($chatId, 'ابتدا حساب خود را با کد اتصال وصل کنید.');
+
+                return;
+            }
+
+            [$action, $rest] = array_pad(explode(':', $data, 2), 2, '');
+            $args = $rest === '' ? [] : explode(':', $rest);
+
+            match ($action) {
+                'menu' => $this->runIntent($subscriber, $args[0] ?? 'help'),
+                'course' => $this->showCourse($subscriber, (int) ($args[0] ?? 0)),
+                'course_alarms' => $this->showCourseAlarms($subscriber, (int) ($args[0] ?? 0)),
+                'session' => $this->showSession($subscriber, (int) ($args[0] ?? 0)),
+                'alarm_add' => $this->showAlarmPresets($subscriber, (string) ($args[0] ?? ''), (int) ($args[1] ?? 0), 'create'),
+                'alarm_set' => $this->createAlarm($subscriber, (string) ($args[0] ?? ''), (int) ($args[1] ?? 0), (int) ($args[2] ?? -1)),
+                'alarm_edit' => $this->showEditPresets($subscriber, (int) ($args[0] ?? 0)),
+                'alarm_upd' => $this->updateAlarm($subscriber, (int) ($args[0] ?? 0), (int) ($args[1] ?? -1)),
+                'alarm_del' => $this->deleteAlarm($subscriber, (int) ($args[0] ?? 0), (string) ($args[1] ?? ''), (int) ($args[2] ?? 0)),
+                'alarm_custom' => $this->askCustomMinutes($subscriber, (string) ($args[0] ?? ''), (int) ($args[1] ?? 0)),
+                'alarm_custom_edit' => $this->askCustomMinutes($subscriber, null, (int) ($args[0] ?? 0)),
+                'assignment' => $this->showAssignment($subscriber, (int) ($args[0] ?? 0)),
+                'assignment_new' => $this->showAssignmentCoursePicker($subscriber),
+                'assignment_course' => $this->startAssignmentTitle($subscriber, (int) ($args[0] ?? 0)),
+                'assignment_done' => $this->toggleAssignment($subscriber, (int) ($args[0] ?? 0)),
+                'assignment_del' => $this->deleteAssignment($subscriber, (int) ($args[0] ?? 0)),
+                'back' => $this->runIntent($subscriber, $args[0] ?? 'help'),
+                default => $this->send($subscriber->chat_id, 'این دکمه دیگر معتبر نیست. از منو استفاده کنید.', $this->mainKeyboard()),
+            };
+        } finally {
+            $this->callbackChatId = null;
+            $this->callbackMessageId = null;
         }
-
-        [$action, $rest] = array_pad(explode(':', $data, 2), 2, '');
-        $args = $rest === '' ? [] : explode(':', $rest);
-
-        match ($action) {
-            'menu' => $this->runIntent($subscriber, $args[0] ?? 'help'),
-            'course' => $this->showCourse($subscriber, (int) ($args[0] ?? 0)),
-            'course_alarms' => $this->showCourseAlarms($subscriber, (int) ($args[0] ?? 0)),
-            'session' => $this->showSession($subscriber, (int) ($args[0] ?? 0)),
-            'alarm_add' => $this->showAlarmPresets($subscriber, (string) ($args[0] ?? ''), (int) ($args[1] ?? 0), 'create'),
-            'alarm_set' => $this->createAlarm($subscriber, (string) ($args[0] ?? ''), (int) ($args[1] ?? 0), (int) ($args[2] ?? -1)),
-            'alarm_edit' => $this->showEditPresets($subscriber, (int) ($args[0] ?? 0)),
-            'alarm_upd' => $this->updateAlarm($subscriber, (int) ($args[0] ?? 0), (int) ($args[1] ?? -1)),
-            'alarm_del' => $this->deleteAlarm($subscriber, (int) ($args[0] ?? 0), (string) ($args[1] ?? ''), (int) ($args[2] ?? 0)),
-            'alarm_custom' => $this->askCustomMinutes($subscriber, (string) ($args[0] ?? ''), (int) ($args[1] ?? 0)),
-            'alarm_custom_edit' => $this->askCustomMinutes($subscriber, null, (int) ($args[0] ?? 0)),
-            'assignment' => $this->showAssignment($subscriber, (int) ($args[0] ?? 0)),
-            'assignment_new' => $this->showAssignmentCoursePicker($subscriber),
-            'assignment_course' => $this->startAssignmentTitle($subscriber, (int) ($args[0] ?? 0)),
-            'assignment_done' => $this->toggleAssignment($subscriber, (int) ($args[0] ?? 0)),
-            'assignment_del' => $this->deleteAssignment($subscriber, (int) ($args[0] ?? 0)),
-            'back' => $this->runIntent($subscriber, $args[0] ?? 'help'),
-            default => $this->send($subscriber->chat_id, 'این دکمه دیگر معتبر نیست. از منو استفاده کنید.', $this->mainKeyboard()),
-        };
     }
 
     private function showSchedule(BaleSubscriber $subscriber): void
@@ -963,6 +980,8 @@ class BaleBot
      */
     private function keyboard(array $rows): array
     {
+        $rows[] = [['text' => '🏠 منوی اصلی', 'callback_data' => 'menu:help']];
+
         return ['inline_keyboard' => $rows];
     }
 
@@ -972,12 +991,20 @@ class BaleBot
     private function mainKeyboard(): array
     {
         return [
-            'keyboard' => [
-                [['text' => '📅 برنامه هفته'], ['text' => '📚 درس‌ها']],
-                [['text' => '📝 کارها'], ['text' => '⏰ یادآورها']],
-                [['text' => '⚙️ تنظیمات'], ['text' => '❓ راهنما']],
+            'inline_keyboard' => [
+                [
+                    ['text' => '📅 برنامه هفته', 'callback_data' => 'menu:schedule'],
+                    ['text' => '📚 درس‌ها', 'callback_data' => 'menu:courses'],
+                ],
+                [
+                    ['text' => '📝 کارها', 'callback_data' => 'menu:assignments'],
+                    ['text' => '⏰ یادآورها', 'callback_data' => 'menu:alarms'],
+                ],
+                [
+                    ['text' => '⚙️ تنظیمات', 'callback_data' => 'menu:settings'],
+                    ['text' => '❓ راهنما', 'callback_data' => 'menu:help'],
+                ],
             ],
-            'resize_keyboard' => true,
         ];
     }
 
@@ -995,6 +1022,12 @@ class BaleBot
 
     private function send(string $chatId, string $text, ?array $replyMarkup = null): void
     {
+        if ($this->callbackChatId === $chatId && $this->callbackMessageId !== null) {
+            $this->bale->editMessageText($chatId, $this->callbackMessageId, $text, $replyMarkup);
+
+            return;
+        }
+
         $this->bale->sendMessage($chatId, $text, $replyMarkup);
     }
 }

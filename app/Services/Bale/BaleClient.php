@@ -49,6 +49,53 @@ class BaleClient
         return $response->json();
     }
 
+    /**
+     * @param  array<string, mixed>|null  $replyMarkup
+     * @return array<string, mixed>|null
+     */
+    public function editMessageText(string $chatId, int $messageId, string $text, ?array $replyMarkup = null, ?string $parseMode = 'HTML'): ?array
+    {
+        if (! $this->configured()) {
+            Log::warning('Bale token is not configured; the message was not edited.', [
+                'chat_id' => $chatId,
+                'message_id' => $messageId,
+            ]);
+
+            return null;
+        }
+
+        $payload = [
+            'chat_id' => $chatId,
+            'message_id' => $messageId,
+            'text' => $text,
+            'reply_markup' => $replyMarkup ?? ['inline_keyboard' => []],
+        ];
+
+        if ($parseMode !== null) {
+            $payload['parse_mode'] = $parseMode;
+        }
+
+        $response = $this->request()->post($this->endpoint('editMessageText'), $payload);
+        $errorDescription = strtolower((string) $response->json('description', ''));
+
+        if (str_contains($errorDescription, 'message is not modified')) {
+            return $response->json();
+        }
+
+        if ($response->failed() || $response->json('ok') === false) {
+            Log::error('Bale editMessageText failed.', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+                'chat_id' => $chatId,
+                'message_id' => $messageId,
+            ]);
+
+            return null;
+        }
+
+        return $response->json();
+    }
+
     public function answerCallbackQuery(string $callbackQueryId, string $text = ''): void
     {
         if (! $this->configured()) {

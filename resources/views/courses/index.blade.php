@@ -83,7 +83,7 @@
 
                         <div class="mt-4 flex items-center gap-3 border-t border-slate-100 pt-3 text-xs text-slate-400 dark:border-slate-800">
                             <span>{{ \Illuminate\Support\Number::format($course->links_count, locale: 'fa') }} لینک</span>
-                            <span>{{ \Illuminate\Support\Number::format($course->sessions_count, locale: 'fa') }} زمان</span>
+                            <span>{{ \Illuminate\Support\Number::format($course->sessions->count(), locale: 'fa') }} زمان</span>
                             <span>{{ \Illuminate\Support\Number::format($course->assignments_count, locale: 'fa') }} کار</span>
                         </div>
                     </div>
